@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Fielder turns service-business leads into booked appointments, loyal customers, and visible capacity.">
+  <meta name="theme-color" content="#10251f">
+  <title>Fielder — From lead to loyal customer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #10251f;
+      --ink-2: #18362d;
+      --paper: #f4f1e8;
+      --paper-2: #eae6d9;
+      --white: #fffdf7;
+      --lime: #b9ed68;
+      --lime-dark: #83bd2d;
+      --coral: #ff7657;
+      --blue: #4b7cf4;
+      --gold: #e6aa36;
+      --muted: #66756f;
+      --line: rgba(16, 37, 31, .14);
+      --display: "DM Serif Display", Georgia, serif;
+      --sans: "Manrope", system-ui, sans-serif;
+      --shadow: 0 24px 70px rgba(16, 37, 31, .13);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; overflow-x: hidden; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.55; }
+    body::before { content: ""; position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: .035; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.75'/%3E%3C/svg%3E"); }
+    a { color: inherit; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    [hidden] { display: none !important; }
+    .wrap { width: min(1180px, calc(100% - 42px)); margin-inline: auto; }
+    .skip { position: fixed; top: -70px; left: 15px; z-index: 200; padding: 10px 15px; background: var(--ink); color: white; }
+    .skip:focus { top: 15px; }
+
+    .nav { position: absolute; inset: 0 0 auto; z-index: 20; color: var(--white); }
+    .nav__inner { min-height: 84px; display: flex; align-items: center; justify-content: space-between; gap: 28px; border-bottom: 1px solid rgba(255,255,255,.16); }
+    .brand { display: inline-flex; align-items: center; gap: 11px; font-size: 1.18rem; font-weight: 800; letter-spacing: -.03em; text-decoration: none; }
+    .brand__mark { position: relative; width: 34px; height: 34px; overflow: hidden; border-radius: 9px 9px 9px 2px; background: var(--lime); box-shadow: inset 0 0 0 1px rgba(16,37,31,.1); }
+    .brand__mark::before, .brand__mark::after { content: ""; position: absolute; left: 8px; right: -3px; height: 2px; background: var(--ink); transform: rotate(-38deg); transform-origin: left; box-shadow: 0 7px 0 var(--ink), 0 14px 0 var(--ink); }
+    .brand__mark::before { top: 8px; }
+    .brand__mark::after { display: none; }
+    .nav__links { display: flex; align-items: center; gap: 28px; }
+    .nav__links a { color: rgba(255,255,255,.72); font-size: .8rem; font-weight: 700; text-decoration: none; }
+    .nav__links a:hover { color: var(--white); }
+    .nav__action { display: flex; align-items: center; gap: 12px; }
+    .nav__login { color: rgba(255,255,255,.75); font-size: .8rem; font-weight: 700; text-decoration: none; }
+    .menu-toggle { display: none; width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.28); border-radius: 50%; background: transparent; color: var(--white); }
+
+    .button { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid var(--ink); border-radius: 999px; padding: 12px 20px; background: var(--ink); color: white; font-size: .84rem; font-weight: 800; text-decoration: none; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
+    .button:hover { transform: translateY(-2px); box-shadow: 0 9px 20px rgba(16,37,31,.16); }
+    .button--lime { border-color: var(--lime); background: var(--lime); color: var(--ink); }
+    .button--lime:hover { background: #c8f584; }
+    .button--light { border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.08); color: white; backdrop-filter: blur(12px); }
+    .button--small { min-height: 41px; padding: 9px 16px; font-size: .75rem; }
+
+    .hero { position: relative; min-height: 870px; overflow: hidden; padding: 162px 0 92px; background: var(--ink); color: var(--white); }
+    .hero::before { content: ""; position: absolute; width: 650px; height: 650px; right: -120px; top: -210px; border: 1px solid rgba(185,237,104,.24); border-radius: 50%; box-shadow: 0 0 0 90px rgba(185,237,104,.025), 0 0 0 180px rgba(185,237,104,.02); }
+    .hero::after { content: ""; position: absolute; inset: auto 0 0; height: 170px; background: linear-gradient(180deg, transparent, rgba(0,0,0,.13)); }
+    .hero__grid { position: relative; z-index: 2; display: grid; grid-template-columns: 1.02fr .98fr; gap: clamp(48px, 7vw, 100px); align-items: center; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 22px; color: var(--lime); font-size: .68rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 27px; height: 2px; background: currentColor; }
+    .hero h1 { max-width: 700px; margin: 0; font-family: var(--display); font-size: clamp(4.2rem, 8vw, 7.4rem); font-weight: 400; letter-spacing: -.045em; line-height: .88; }
+    .hero h1 em { color: var(--lime); font-weight: 400; }
+    .hero__lead { max-width: 600px; margin: 28px 0; color: rgba(255,255,255,.68); font-size: clamp(1rem, 1.5vw, 1.16rem); }
+    .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .hero__proof { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-top: 30px; color: rgba(255,255,255,.62); font-size: .72rem; }
+    .hero__proof span { display: flex; align-items: center; gap: 7px; }
+    .hero__proof i { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: rgba(185,237,104,.15); color: var(--lime); font-style: normal; }
+
+    .app-preview { position: relative; min-width: 0; border: 1px solid rgba(255,255,255,.16); border-radius: 22px; padding: 11px; background: rgba(255,255,255,.06); box-shadow: 0 40px 100px rgba(0,0,0,.28); transform: rotate(1.4deg); backdrop-filter: blur(10px); }
+    .app-preview::before { content: "Live workspace"; position: absolute; top: -30px; right: 12px; color: rgba(255,255,255,.42); font-size: .62rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .app { overflow: hidden; border-radius: 14px; background: #f7f8f5; color: var(--ink); }
+    .app__top { min-height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #dde3dd; background: white; }
+    .app__brand { display: flex; align-items: center; gap: 8px; font-size: .68rem; font-weight: 800; }
+    .app__brand .brand__mark { width: 24px; height: 24px; border-radius: 7px 7px 7px 2px; }
+    .app__brand .brand__mark::before { left: 6px; top: 6px; box-shadow: 0 5px 0 var(--ink), 0 10px 0 var(--ink); }
+    .app__meta { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: .58rem; }
+    .app__avatar { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: white; font-size: .55rem; font-weight: 800; }
+    .app__body { display: grid; grid-template-columns: 105px 1fr; min-height: 480px; }
+    .app__side { padding: 16px 10px; border-right: 1px solid #dde3dd; background: white; }
+    .app__business { margin-bottom: 18px; border-radius: 8px; padding: 9px; background: #f1f4ee; }
+    .app__business small { display: block; color: var(--muted); font-size: .46rem; text-transform: uppercase; }
+    .app__business strong { font-size: .63rem; }
+    .app__nav { display: grid; gap: 5px; }
+    .app__nav button { display: flex; align-items: center; gap: 6px; border: 0; border-radius: 6px; padding: 7px; background: transparent; color: #6d7973; font-size: .52rem; font-weight: 700; text-align: left; }
+    .app__nav button.active { background: #e8f6d4; color: #4c7819; }
+    .app__nav b { width: 14px; font-size: .62rem; }
+    .app__main { min-width: 0; padding: 18px; }
+    .app__heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .app__heading small { display: block; color: var(--muted); font-size: .48rem; text-transform: uppercase; }
+    .app__heading h3 { margin: 2px 0 0; font-family: var(--display); font-size: 1.18rem; font-weight: 400; }
+    .app__heading span { border-radius: 99px; padding: 5px 8px; background: white; color: var(--muted); font-size: .48rem; }
+    .preview-view { display: none; }
+    .preview-view.active { display: block; }
+    .mini-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .mini-metric { border: 1px solid #dde3dd; border-radius: 8px; padding: 10px; background: white; }
+    .mini-metric span { color: var(--muted); font-size: .45rem; text-transform: uppercase; }
+    .mini-metric strong { display: block; margin-top: 4px; font-family: var(--display); font-size: 1.2rem; font-weight: 400; }
+    .mini-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 8px; margin-top: 8px; }
+    .mini-panel { border: 1px solid #dde3dd; border-radius: 9px; padding: 11px; background: white; }
+    .mini-panel__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .mini-panel__head strong { font-size: .56rem; }
+    .mini-panel__head a { color: #4e7d18; font-size: .44rem; }
+    .capacity { display: flex; align-items: center; gap: 12px; }
+    .capacity__ring { width: 72px; height: 72px; display: grid; place-items: center; flex: none; border-radius: 50%; background: conic-gradient(var(--lime-dark) 0 292deg, #e4e9e3 292deg); position: relative; }
+    .capacity__ring::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: white; }
+    .capacity__ring strong { position: relative; font-family: var(--display); font-size: 1.15rem; font-weight: 400; }
+    .capacity__copy span { color: var(--muted); font-size: .47rem; }
+    .capacity__copy strong { display: block; font-size: .62rem; }
+    .tiny-progress { height: 5px; margin-top: 7px; overflow: hidden; border-radius: 99px; background: #e5e9e4; }
+    .tiny-progress i { display: block; width: 81%; height: 100%; border-radius: inherit; background: var(--lime-dark); }
+    .health-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #edf0ec; }
+    .health-row:last-child { border: 0; }
+    .health-person { display: flex; align-items: center; gap: 7px; }
+    .health-person i { width: 23px; height: 23px; display: grid; place-items: center; border-radius: 7px; background: #edf2eb; color: var(--ink); font-size: .45rem; font-style: normal; font-weight: 800; }
+    .health-person strong { display: block; font-size: .5rem; }
+    .health-person span { display: block; color: var(--muted); font-size: .42rem; }
+    .pill { border-radius: 99px; padding: 3px 6px; font-size: .39rem; font-weight: 800; }
+    .pill--risk { background: #fff0d2; color: #95620c; }
+    .pill--ghost { background: #ffe8e3; color: #aa4934; }
+    .pill--great { background: #e3f5d0; color: #4c7819; }
+    .pipeline-mini { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .pipe-col { min-height: 270px; border-radius: 8px; padding: 7px; background: #e9ede7; }
+    .pipe-col header { display: flex; justify-content: space-between; margin-bottom: 7px; color: var(--muted); font-size: .44rem; font-weight: 800; text-transform: uppercase; }
+    .pipe-card { margin-bottom: 5px; border-radius: 6px; padding: 8px; background: white; box-shadow: 0 3px 8px rgba(16,37,31,.05); }
+    .pipe-card strong { display: block; font-size: .48rem; }
+    .pipe-card span { color: var(--muted); font-size: .4rem; }
+    .customer-mini { border: 1px solid #dde3dd; border-radius: 8px; overflow: hidden; background: white; }
+    .customer-row { display: grid; grid-template-columns: 1.3fr .7fr .8fr .7fr; gap: 6px; align-items: center; padding: 9px 10px; border-bottom: 1px solid #edf0ec; font-size: .47rem; }
+    .customer-row:first-child { background: #f1f4ef; color: var(--muted); font-weight: 800; text-transform: uppercase; }
+
+    .channel-bar { position: relative; z-index: 3; margin-top: -35px; }
+    .channel-bar__inner { display: flex; align-items: center; justify-content: space-between; gap: 25px; border-radius: 16px; padding: 23px 28px; background: var(--white); box-shadow: var(--shadow); }
+    .channel-bar p { margin: 0; color: var(--muted); font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .channels { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }
+    .channels span { border: 1px solid var(--line); border-radius: 99px; padding: 7px 11px; color: var(--muted); font-size: .68rem; font-weight: 700; }
+
+    section { padding: 112px 0; }
+    .section-head { display: grid; grid-template-columns: 1fr .8fr; gap: 60px; align-items: end; margin-bottom: 54px; }
+    .section-head h2 { margin: 0; font-family: var(--display); font-size: clamp(3rem, 5.5vw, 5.2rem); font-weight: 400; letter-spacing: -.035em; line-height: .95; }
+    .section-head h2 em { color: var(--lime-dark); font-weight: 400; }
+    .section-head > p { max-width: 460px; margin: 0; color: var(--muted); }
+
+    .journey-section { padding-top: 145px; }
+    .journey-grid { display: grid; grid-template-columns: repeat(6, 1fr); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: var(--white); }
+    .journey-step { position: relative; min-height: 220px; padding: 25px 20px; border-right: 1px solid var(--line); }
+    .journey-step:last-child { border: 0; }
+    .journey-step::after { content: "→"; position: absolute; top: 26px; right: -8px; z-index: 2; width: 16px; height: 16px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: white; font-size: .55rem; }
+    .journey-step:last-child::after { display: none; }
+    .journey-step > span { color: var(--lime-dark); font-size: .62rem; font-weight: 800; letter-spacing: .12em; }
+    .journey-step h3 { margin: 52px 0 8px; font-family: var(--display); font-size: 1.45rem; font-weight: 400; }
+    .journey-step p { margin: 0; color: var(--muted); font-size: .72rem; }
+
+    .flows-section { background: var(--paper-2); }
+    .flows-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .flow-card { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 17px; padding: 30px; background: var(--white); transition: transform .2s ease, box-shadow .2s ease; }
+    .flow-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+    .flow-card__tag { display: inline-flex; align-items: center; gap: 8px; border-radius: 99px; padding: 6px 13px; background: var(--ink); color: var(--lime); font-size: .6rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .flow-card:nth-child(2) .flow-card__tag { color: var(--coral); }
+    .flow-card:nth-child(3) .flow-card__tag { color: #8eabff; }
+    .flow-card:nth-child(4) .flow-card__tag { color: var(--gold); }
+    .flow-card h3 { margin: 17px 0 4px; font-family: var(--display); font-size: 1.95rem; font-weight: 400; line-height: 1; }
+    .flow-card__who { margin: 0 0 20px; color: var(--muted); font-size: .74rem; }
+    .flow-pipe { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 20px; }
+    .flow-pipe .step { border: 1px solid var(--line); border-radius: 7px; padding: 5px 9px; background: var(--paper); font-size: .66rem; font-weight: 700; white-space: nowrap; }
+    .flow-pipe .arrow { color: var(--lime-dark); font-size: .7rem; font-weight: 800; }
+    .flow-metrics { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 17px; border-top: 1px solid var(--line); }
+    .flow-metrics span { border: 1px solid var(--line); border-radius: 99px; padding: 5px 10px; background: var(--paper); color: var(--muted); font-size: .63rem; font-weight: 600; }
+
+    .modules { background: var(--ink); color: white; }
+    .modules .section-head > p { color: rgba(255,255,255,.56); }
+    .modules .section-head h2 em { color: var(--lime); }
+    .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .module { position: relative; min-height: 310px; overflow: hidden; border: 1px solid rgba(255,255,255,.13); border-radius: 17px; padding: 27px; background: rgba(255,255,255,.045); }
+    .module::after { content: ""; position: absolute; width: 140px; height: 140px; right: -65px; bottom: -75px; border: 1px solid rgba(185,237,104,.24); border-radius: 50%; }
+    .module__icon { width: 41px; height: 41px; display: grid; place-items: center; border-radius: 10px; background: var(--lime); color: var(--ink); font-weight: 800; }
+    .module:nth-child(2) .module__icon, .module:nth-child(5) .module__icon { background: var(--coral); }
+    .module:nth-child(3) .module__icon, .module:nth-child(6) .module__icon { background: #8eabff; }
+    .module h3 { margin: 74px 0 10px; font-family: var(--display); font-size: 1.85rem; font-weight: 400; }
+    .module p { margin: 0; color: rgba(255,255,255,.55); font-size: .8rem; }
+    .module small { position: absolute; right: 25px; top: 28px; color: rgba(255,255,255,.28); font-size: .6rem; font-weight: 800; letter-spacing: .12em; }
+
+    .capacity-section { background: var(--paper-2); }
+    .capacity-demo { display: grid; grid-template-columns: 260px 1fr; gap: 16px; }
+    .business-tabs { display: grid; gap: 8px; }
+    .business-tab { display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--line); border-radius: 12px; padding: 17px 18px; background: transparent; color: var(--muted); font-weight: 700; text-align: left; }
+    .business-tab span { color: var(--muted); font-size: .7rem; }
+    .business-tab.active { border-color: var(--ink); background: var(--ink); color: white; }
+    .business-tab.active span { color: var(--lime); }
+    .capacity-card { display: grid; grid-template-columns: 1fr 1fr; min-height: 430px; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--white); box-shadow: var(--shadow); }
+    .capacity-card__copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(32px, 5vw, 65px); }
+    .capacity-card__copy h3 { margin: 0 0 14px; font-family: var(--display); font-size: clamp(2.5rem, 4.5vw, 4.2rem); font-weight: 400; line-height: .95; }
+    .capacity-card__copy p { color: var(--muted); }
+    .capacity-card__visual { display: grid; place-items: center; padding: 35px; background: var(--ink); color: white; }
+    .big-capacity { width: 270px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--lime) 0 var(--cap-angle, 288deg), rgba(255,255,255,.1) var(--cap-angle, 288deg)); position: relative; }
+    .big-capacity::before { content: ""; position: absolute; inset: 18px; border-radius: 50%; background: var(--ink); }
+    .big-capacity__inside { position: relative; text-align: center; }
+    .big-capacity strong { display: block; font-family: var(--display); font-size: 5.5rem; font-weight: 400; line-height: .8; }
+    .big-capacity span { color: rgba(255,255,255,.6); font-size: .72rem; text-transform: uppercase; }
+    .capacity-stats { display: flex; gap: 22px; margin-top: 25px; }
+    .capacity-stats div { border-left: 2px solid var(--lime); padding-left: 10px; }
+    .capacity-stats strong { display: block; font-size: 1.1rem; }
+    .capacity-stats span { color: var(--muted); font-size: .66rem; }
+
+    .health-section { overflow: hidden; }
+    .health-board { display: grid; grid-template-columns: repeat(5, minmax(210px, 1fr)); gap: 12px; }
+    .health-card { min-height: 250px; border: 1px solid var(--line); border-radius: 15px; padding: 23px; background: var(--white); }
+    .health-card__status { width: 11px; height: 11px; display: block; border-radius: 50%; background: var(--status); box-shadow: 0 0 0 6px color-mix(in srgb, var(--status) 15%, transparent); }
+    .health-card h3 { margin: 62px 0 8px; font-family: var(--display); font-size: 1.7rem; font-weight: 400; }
+    .health-card p { color: var(--muted); font-size: .74rem; }
+    .health-card strong { color: var(--status); font-size: .67rem; text-transform: uppercase; }
+
+    .industries { padding-top: 25px; }
+    .industry-cloud { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .industry-cloud span { border: 1px solid var(--line); border-radius: 99px; padding: 12px 17px; background: var(--white); color: var(--muted); font-size: .8rem; font-weight: 700; }
+    .industry-cloud span:nth-child(2n) { transform: translateY(10px); }
+
+    .pricing { padding-bottom: 130px; }
+    .pricing-card { display: grid; grid-template-columns: 1fr .8fr; overflow: hidden; border-radius: 22px; background: var(--lime); box-shadow: var(--shadow); }
+    .pricing-card__copy { padding: clamp(35px, 7vw, 80px); }
+    .pricing-card h2 { max-width: 700px; margin: 0; font-family: var(--display); font-size: clamp(3rem, 6vw, 5.8rem); font-weight: 400; line-height: .92; }
+    .pricing-card p { max-width: 570px; color: #3f5a2d; }
+    .price-box { display: flex; flex-direction: column; justify-content: center; padding: clamp(35px, 5vw, 65px); background: var(--ink); color: white; }
+    .price-box small { color: var(--lime); font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .price { margin: 12px 0; font-family: var(--display); font-size: 5.8rem; line-height: 1; }
+    .price sup { font-family: var(--sans); font-size: 1.2rem; vertical-align: top; }
+    .price span { font-family: var(--sans); font-size: .8rem; color: rgba(255,255,255,.5); }
+    .price-box ul { margin: 15px 0 25px; padding: 0; list-style: none; }
+    .price-box li { padding: 7px 0; color: rgba(255,255,255,.7); font-size: .78rem; }
+    .price-box li::before { content: "✓"; margin-right: 8px; color: var(--lime); }
+
+    .footer { padding: 60px 0 25px; background: var(--ink); color: white; }
+    .footer__top { display: flex; justify-content: space-between; gap: 50px; padding-bottom: 50px; }
+    .footer .brand { color: white; }
+    .footer__top p { max-width: 390px; margin-top: 16px; color: rgba(255,255,255,.5); font-size: .78rem; }
+    .footer__links { display: flex; gap: 70px; }
+    .footer__links div { display: flex; flex-direction: column; gap: 8px; }
+    .footer__links strong { margin-bottom: 5px; color: var(--lime); font-size: .65rem; text-transform: uppercase; }
+    .footer__links a { color: rgba(255,255,255,.55); font-size: .74rem; text-decoration: none; }
+    .footer__bottom { display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid rgba(255,255,255,.12); padding-top: 22px; color: rgba(255,255,255,.36); font-size: .65rem; }
+
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    @media (max-width: 960px) {
+      .hero__grid, .section-head, .pricing-card { grid-template-columns: 1fr; }
+      .hero { min-height: auto; }
+      .hero__copy { max-width: 760px; }
+      .app-preview { max-width: 680px; transform: none; }
+      .journey-grid { grid-template-columns: repeat(3, 1fr); }
+      .journey-step:nth-child(3) { border-right: 0; }
+      .journey-step:nth-child(-n+3) { border-bottom: 1px solid var(--line); }
+      .module-grid { grid-template-columns: repeat(2, 1fr); }
+      .capacity-demo { grid-template-columns: 1fr; }
+      .business-tabs { grid-template-columns: repeat(4, 1fr); }
+      .business-tab { flex-direction: column; align-items: flex-start; }
+      .health-board { overflow-x: auto; padding-bottom: 10px; }
+    }
+
+    @media (max-width: 720px) {
+      .wrap { width: min(100% - 28px, 1180px); }
+      .nav__inner { min-height: 70px; }
+      .menu-toggle { display: grid; place-items: center; }
+      .nav__links { position: absolute; top: 70px; left: 14px; right: 14px; display: none; flex-direction: column; align-items: stretch; gap: 0; border: 1px solid rgba(255,255,255,.15); border-radius: 12px; padding: 9px; background: rgba(16,37,31,.97); box-shadow: var(--shadow); }
+      .nav__links.open { display: flex; }
+      .nav__links a { padding: 11px; }
+      .nav__login { display: none; }
+      .nav__action .button { display: none; }
+      .hero { padding-top: 125px; }
+      .hero h1 { font-size: clamp(3.7rem, 18vw, 5.5rem); }
+      .app__body { grid-template-columns: 74px 1fr; min-height: 410px; }
+      .app__side { padding-inline: 6px; }
+      .app__business { padding: 6px; }
+      .app__nav button { padding: 6px 4px; font-size: .43rem; }
+      .app__main { padding: 11px; }
+      .mini-metrics { grid-template-columns: repeat(2, 1fr); }
+      .mini-grid { grid-template-columns: 1fr; }
+      .mini-grid .mini-panel:last-child { display: none; }
+      .journey-grid { grid-template-columns: 1fr 1fr; }
+      .journey-step:nth-child(n) { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+      .journey-step:nth-child(2n) { border-right: 0; }
+      .journey-step:nth-last-child(-n+2) { border-bottom: 0; }
+      .module-grid { grid-template-columns: 1fr; }
+      .flows-grid { grid-template-columns: 1fr; }
+      .module { min-height: 260px; }
+      .business-tabs { grid-template-columns: 1fr 1fr; }
+      .capacity-card { grid-template-columns: 1fr; }
+      .capacity-card__visual { min-height: 390px; }
+      .channel-bar__inner, .footer__top, .footer__bottom { align-items: flex-start; flex-direction: column; }
+      .channels { justify-content: flex-start; }
+      .footer__links { gap: 35px; }
+    }
+
+    @media (max-width: 470px) {
+      .hero__actions .button { width: 100%; }
+      .app-preview { margin-inline: -4px; }
+      .app__meta > span { display: none; }
+      .journey-grid { grid-template-columns: 1fr; }
+      .journey-step:nth-child(n) { min-height: 180px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .journey-step:last-child { border-bottom: 0; }
+      .journey-step h3 { margin-top: 35px; }
+      .business-tabs { grid-template-columns: 1fr; }
+      .big-capacity { width: 230px; }
+      .footer__links { flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <nav class="nav" aria-label="Main navigation">
+    <div class="wrap nav__inner">
+      <a class="brand" href="#top" aria-label="Fielder home"><span class="brand__mark" aria-hidden="true"></span>Fielder</a>
+      <div class="nav__links" id="navLinks">
+        <a href="#workflow">How it works</a>
+        <a href="#flows">Flows</a>
+        <a href="#product">Product</a>
+        <a href="#capacity">Capacity</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+      <div class="nav__action">
+        <a class="nav__login" href="#preview">Owner login</a>
+        <a class="button button--small button--lime" href="#pricing">Start with Fielder <span aria-hidden="true">↗</span></a>
+        <button class="menu-toggle" id="menuToggle" aria-label="Open navigation" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main">
+    <header class="hero" id="top">
+      <div class="wrap hero__grid">
+        <div class="hero__copy">
+          <p class="eyebrow">The operating hub for service businesses</p>
+          <h1>From first lead to <em>loyal customer.</em></h1>
+          <p class="hero__lead">Fielder puts your website, intake, booking, leads, customer health, and capacity in one simple flow—so no opportunity gets buried in a DM.</p>
+          <div class="hero__actions">
+            <a class="button button--lime" href="#pricing">Get your business in the field <span aria-hidden="true">→</span></a>
+            <a class="button button--light" href="#preview">See the owner hub</a>
+          </div>
+          <div class="hero__proof">
+            <span><i>✓</i> Branded client site</span>
+            <span><i>✓</i> Lead-to-booking workflow</span>
+            <span><i>✓</i> Built for local service</span>
+          </div>
+        </div>
+
+        <div class="app-preview" id="preview">
+          <div class="app">
+            <div class="app__top"><div class="app__brand"><span class="brand__mark"></span>Fielder</div><div class="app__meta"><span>Thu, Jun 18</span><div class="app__avatar">MC</div></div></div>
+            <div class="app__body">
+              <aside class="app__side">
+                <div class="app__business"><small>Workspace</small><strong>Mike Cuts</strong></div>
+                <nav class="app__nav" aria-label="Preview dashboard views">
+                  <button class="active" data-preview="overview"><b>⌂</b>Overview</button>
+                  <button data-preview="pipeline"><b>⇢</b>Pipeline</button>
+                  <button data-preview="customers"><b>◎</b>Customers</button>
+                </nav>
+              </aside>
+              <div class="app__main">
+                <div class="app__heading"><div><small>Today</small><h3 id="previewTitle">Overview</h3></div><span>Live business pulse</span></div>
+
+                <div class="preview-view active" id="preview-overview">
+                  <div class="mini-metrics">
+                    <div class="mini-metric"><span>New leads</span><strong>8</strong></div>
+                    <div class="mini-metric"><span>Booked</span><strong>35</strong></div>
+                    <div class="mini-metric"><span>Capacity left</span><strong>7</strong></div>
+                    <div class="mini-metric"><span>Conversion</span><strong>71%</strong></div>
+                  </div>
+                  <div class="mini-grid">
+                    <div class="mini-panel"><div class="mini-panel__head"><strong>This week's capacity</strong><a href="#capacity">Manage</a></div><div class="capacity"><div class="capacity__ring"><strong>7</strong></div><div class="capacity__copy"><span>Appointments remaining</span><strong>35 of 42 booked</strong><div class="tiny-progress"><i></i></div></div></div></div>
+                    <div class="mini-panel"><div class="mini-panel__head"><strong>Needs attention</strong><a href="#health">View</a></div><div class="health-row"><div class="health-person"><i>AJ</i><div><strong>Andre J.</strong><span>Fade · 8 days ago</span></div></div><span class="pill pill--ghost">Ghosted</span></div><div class="health-row"><div class="health-person"><i>DR</i><div><strong>Devin R.</strong><span>Lineup · 21 days ago</span></div></div><span class="pill pill--risk">At risk</span></div><div class="health-row"><div class="health-person"><i>KL</i><div><strong>Kai L.</strong><span>Regular · 4 visits</span></div></div><span class="pill pill--great">Great</span></div></div></div>
+                  </div>
+                </div>
+
+                <div class="preview-view" id="preview-pipeline">
+                  <div class="pipeline-mini">
+                    <div class="pipe-col"><header><span>New</span><b>3</b></header><div class="pipe-card"><strong>Tasha B.</strong><span>Silk press</span></div><div class="pipe-card"><strong>Omar J.</strong><span>Fade</span></div></div>
+                    <div class="pipe-col"><header><span>Contacted</span><b>2</b></header><div class="pipe-card"><strong>Andre J.</strong><span>Beard trim</span></div></div>
+                    <div class="pipe-col"><header><span>Booked</span><b>5</b></header><div class="pipe-card"><strong>Maya K.</strong><span>Cut + color</span></div><div class="pipe-card"><strong>Jay C.</strong><span>Lineup</span></div></div>
+                    <div class="pipe-col"><header><span>Complete</span><b>7</b></header><div class="pipe-card"><strong>Kai L.</strong><span>Fade</span></div></div>
+                  </div>
+                </div>
+
+                <div class="preview-view" id="preview-customers">
+                  <div class="customer-mini">
+                    <div class="customer-row"><span>Customer</span><span>Health</span><span>Service</span><span>Visits</span></div>
+                    <div class="customer-row"><strong>Kai Lewis</strong><span class="pill pill--great">Great</span><span>Fade</span><b>4</b></div>
+                    <div class="customer-row"><strong>Maya King</strong><span class="pill pill--great">Great</span><span>Cut + color</span><b>3</b></div>
+                    <div class="customer-row"><strong>Devin Ross</strong><span class="pill pill--risk">At risk</span><span>Lineup</span><b>2</b></div>
+                    <div class="customer-row"><strong>Andre Jones</strong><span class="pill pill--ghost">Ghosted</span><span>Beard trim</span><b>0</b></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="channel-bar">
+      <div class="wrap channel-bar__inner"><p>Every channel. One front door.</p><div class="channels"><span>Instagram</span><span>Google</span><span>Facebook</span><span>Text</span><span>Referral</span><span>Website</span></div></div>
+    </div>
+
+    <section class="journey-section" id="workflow">
+      <div class="wrap">
+        <div class="section-head reveal"><div><p class="eyebrow">One connected customer journey</p><h2>Demand enters.<br><em>Clarity comes out.</em></h2></div><p>Your client sees a polished business. You see the entire relationship—from the first click to the next service they should book.</p></div>
+        <div class="journey-grid reveal">
+          <article class="journey-step"><span>01</span><h3>Social</h3><p>Your Fielder link lives wherever customers discover you.</p></article>
+          <article class="journey-step"><span>02</span><h3>Website</h3><p>A custom branded page explains the offer and builds trust.</p></article>
+          <article class="journey-step"><span>03</span><h3>Intake</h3><p>Questions and photos give you the details before the call.</p></article>
+          <article class="journey-step"><span>04</span><h3>Booking</h3><p>The right next step—book, quote, reserve, or subscribe—turns demand into a job.</p></article>
+          <article class="journey-step"><span>05</span><h3>Customer</h3><p>Every lead and appointment becomes a visible record.</p></article>
+          <article class="journey-step"><span>06</span><h3>Retention</h3><p>Spot great clients, churn risk, and ghosted revenue.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="flows-section" id="flows">
+      <div class="wrap">
+        <div class="section-head reveal"><div><p class="eyebrow">One engine, four flows</p><h2>Not twenty apps.<br><em>One reusable system.</em></h2></div><p>Fielder isn't rebuilt for every trade. It runs four proven service workflows—the labels change by industry, the engine stays the same. Pick the flow that matches how you actually sell.</p></div>
+        <div class="flows-grid reveal">
+
+          <article class="flow-card">
+            <span class="flow-card__tag">Appointment Flow</span>
+            <h3>Time-slot bookings</h3>
+            <p class="flow-card__who">Barbers · Trainers · Coaches · Photographers · Detailers</p>
+            <div class="flow-pipe">
+              <span class="step">Lead</span><span class="arrow">→</span>
+              <span class="step">Book</span><span class="arrow">→</span>
+              <span class="step">Confirmed</span><span class="arrow">→</span>
+              <span class="step">Completed</span><span class="arrow">→</span>
+              <span class="step">Returning</span>
+            </div>
+            <div class="flow-metrics"><span>Upcoming bookings</span><span>No-shows</span><span>Repeat customers</span><span>Ghosted leads</span><span>Capacity %</span></div>
+          </article>
+
+          <article class="flow-card">
+            <span class="flow-card__tag">Quote Flow</span>
+            <h3>Estimate, then schedule</h3>
+            <p class="flow-card__who">Pressure washing · Handyman · Contractors · Lawn · Detailing</p>
+            <div class="flow-pipe">
+              <span class="step">Lead</span><span class="arrow">→</span>
+              <span class="step">Review</span><span class="arrow">→</span>
+              <span class="step">Quote sent</span><span class="arrow">→</span>
+              <span class="step">Accepted</span><span class="arrow">→</span>
+              <span class="step">Scheduled</span><span class="arrow">→</span>
+              <span class="step">Completed</span>
+            </div>
+            <div class="flow-metrics"><span>Quotes outstanding</span><span>Acceptance rate</span><span>Ghosted quotes</span><span>Revenue pipeline</span></div>
+          </article>
+
+          <article class="flow-card">
+            <span class="flow-card__tag">Capacity Flow</span>
+            <h3>Batch &amp; route based</h3>
+            <p class="flow-card__who">Meal prep · Lawn routes · Cleaning · Batch services</p>
+            <div class="flow-pipe">
+              <span class="step">Lead</span><span class="arrow">→</span>
+              <span class="step">Reserve slot</span><span class="arrow">→</span>
+              <span class="step">Scheduled</span><span class="arrow">→</span>
+              <span class="step">Completed</span><span class="arrow">→</span>
+              <span class="step">Recurring</span>
+            </div>
+            <div class="flow-metrics"><span>Capacity remaining</span><span>Waitlist</span><span>Weekly utilization</span><span>Recurring customers</span><span>Full / overflow</span></div>
+          </article>
+
+          <article class="flow-card">
+            <span class="flow-card__tag">Membership Flow</span>
+            <h3>Recurring &amp; subscription</h3>
+            <p class="flow-card__who">Monthly cleaning · Monthly lawn · Coaching programs</p>
+            <div class="flow-pipe">
+              <span class="step">Lead</span><span class="arrow">→</span>
+              <span class="step">Subscribed</span><span class="arrow">→</span>
+              <span class="step">Active</span><span class="arrow">→</span>
+              <span class="step">Renewal</span><span class="arrow">→</span>
+              <span class="step">Retained</span>
+            </div>
+            <div class="flow-metrics"><span>Active members</span><span>Churn</span><span>Retention</span><span>Lifetime value</span></div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <section class="modules" id="product">
+      <div class="wrap">
+        <div class="section-head reveal"><div><p class="eyebrow">The whole field in view</p><h2>Your business hub,<br><em>without CRM bloat.</em></h2></div><p>Fielder is not another page builder. It is the operating layer between customer interest and a healthier book of business.</p></div>
+        <div class="module-grid">
+          <article class="module reveal"><div class="module__icon">↗</div><small>CAPTURE</small><h3>Branded front door</h3><p>Your services, prices, proof, contact details, and intake—built to convert social traffic into organized demand.</p></article>
+          <article class="module reveal"><div class="module__icon">⇢</div><small>PIPELINE</small><h3>Lead control</h3><p>Know exactly who is new, contacted, confirmed, booked, completed, returning, or quietly slipping away.</p></article>
+          <article class="module reveal"><div class="module__icon">◴</div><small>CAPACITY</small><h3>Protect the schedule</h3><p>Define weekly or monthly limits and see remaining space before the calendar becomes a problem.</p></article>
+          <article class="module reveal"><div class="module__icon">◎</div><small>HEALTH</small><h3>Customer intelligence</h3><p>See great, active, at-risk, ghosted, and lost customers without maintaining another spreadsheet.</p></article>
+          <article class="module reveal"><div class="module__icon">✦</div><small>RECOVERY</small><h3>Find hidden revenue</h3><p>Surface inquiries that never booked and good customers who are overdue for the next visit.</p></article>
+          <article class="module reveal"><div class="module__icon">↟</div><small>MESSAGING</small><h3>Timely follow-up</h3><p>Use SMS-ready confirmations, reminders, thank-yous, reactivation, and ghost-recovery messages.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="capacity-section" id="capacity">
+      <div class="wrap">
+        <div class="section-head reveal"><div><p class="eyebrow">Capacity that speaks your language</p><h2>Every service has a <em>real limit.</em></h2></div><p>Fielder translates the same operating idea into the unit that matters for each business—appointments, orders, properties, vehicles, or sessions.</p></div>
+        <div class="capacity-demo reveal">
+          <div class="business-tabs" id="businessTabs">
+            <button class="business-tab active" data-business="barber">Barber <span>appointments</span></button>
+            <button class="business-tab" data-business="meals">Meal prep <span>weekly orders</span></button>
+            <button class="business-tab" data-business="lawn">Lawn care <span>properties</span></button>
+            <button class="business-tab" data-business="detail">Detailer <span>vehicles</span></button>
+          </div>
+          <div class="capacity-card">
+            <div class="capacity-card__copy"><p class="eyebrow" id="capacityLabel">Barber capacity</p><h3 id="capacityHeadline">A full book—before it overbooks.</h3><p id="capacityCopy">Track available appointments across the week and move overflow demand into the next opening.</p><div class="capacity-stats"><div><strong id="capacityUsedStat">35</strong><span id="capacityUsedLabel">booked</span></div><div><strong id="capacityLimitStat">42</strong><span>capacity</span></div></div></div>
+            <div class="capacity-card__visual"><div class="big-capacity" id="bigCapacity"><div class="big-capacity__inside"><strong id="capacityRemainingDemo">7</strong><span>remaining</span></div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="health-section" id="health">
+      <div class="wrap">
+        <div class="section-head reveal"><div><p class="eyebrow">Customer health</p><h2>Know who is growing—and who is <em>going quiet.</em></h2></div><p>Fielder turns customer activity into simple, useful signals. No analyst required.</p></div>
+        <div class="health-board reveal">
+          <article class="health-card" style="--status:#6bbf3a"><span class="health-card__status"></span><h3>Great</h3><p>Frequent, engaged customers who reliably return and spend.</p><strong>Protect the relationship</strong></article>
+          <article class="health-card" style="--status:#4b7cf4"><span class="health-card__status"></span><h3>Active</h3><p>Recent activity and a healthy place in the current service cycle.</p><strong>Stay consistent</strong></article>
+          <article class="health-card" style="--status:#e6aa36"><span class="health-card__status"></span><h3>At risk</h3><p>A good customer who has passed their expected return window.</p><strong>Reach out</strong></article>
+          <article class="health-card" style="--status:#ff7657"><span class="health-card__status"></span><h3>Ghosted</h3><p>They raised a hand, received follow-up, and never booked.</p><strong>Recover the lead</strong></article>
+          <article class="health-card" style="--status:#7c8984"><span class="health-card__status"></span><h3>Lost</h3><p>No engagement beyond the business's retention threshold.</p><strong>Learn and archive</strong></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="industries">
+      <div class="wrap">
+        <div class="section-head reveal"><div><p class="eyebrow">Built for the people doing the work</p><h2>Local service is the <em>field.</em></h2></div><p>Different service, same challenge: capture demand, deliver well, and keep the right customers coming back.</p></div>
+        <div class="industry-cloud reveal"><span>Barbers</span><span>Meal preppers</span><span>Lawn care</span><span>Mobile detailers</span><span>Cleaners</span><span>Personal trainers</span><span>Pet groomers</span><span>Handymen</span><span>Beauty professionals</span><span>Home services</span></div>
+      </div>
+    </section>
+
+    <section class="pricing" id="pricing">
+      <div class="wrap">
+        <div class="pricing-card reveal">
+          <div class="pricing-card__copy"><p class="eyebrow">Simple enough to start now</p><h2>Your front door and your back office—together.</h2><p>One branded system for capturing demand, booking work, seeing capacity, and bringing good customers back.</p></div>
+          <div class="price-box"><small>Fielder business hub</small><div class="price"><sup>$</sup>75<span>/ month maximum</span></div><ul><li>Custom branded client site</li><li>Intake and booking flow</li><li>Owner dashboard and pipeline</li><li>Capacity and customer health</li><li>Email alerts and SMS-ready tools</li></ul><a class="button button--lime" href="mailto:hello@fielder.app?subject=I%20want%20Fielder">Claim your Fielder setup →</a></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer__top"><div><a class="brand" href="#top"><span class="brand__mark"></span>Fielder</a><p>The one-stop customer and capacity hub for small service businesses.</p></div><div class="footer__links"><div><strong>Product</strong><a href="#workflow">Workflow</a><a href="#product">Features</a><a href="#capacity">Capacity</a></div><div><strong>Company</strong><a href="mailto:hello@fielder.app">Contact</a><a href="#pricing">Pricing</a><a href="#preview">Owner hub</a></div></div></div>
+      <div class="footer__bottom"><span>© <span id="year"></span> Fielder. From lead to loyal customer.</span><span>Built for the field—not the spreadsheet.</span></div>
+    </div>
+  </footer>
+
+  <script>
+    const previewButtons = document.querySelectorAll('[data-preview]');
+    const previewTitles = { overview: 'Overview', pipeline: 'Lead pipeline', customers: 'Customer health' };
+
+    previewButtons.forEach((button) => button.addEventListener('click', () => {
+      previewButtons.forEach((item) => item.classList.toggle('active', item === button));
+      document.querySelectorAll('.preview-view').forEach((view) => view.classList.toggle('active', view.id === `preview-${button.dataset.preview}`));
+      document.getElementById('previewTitle').textContent = previewTitles[button.dataset.preview];
+    }));
+
+    const capacityData = {
+      barber: { label: 'Barber capacity', headline: 'A full book—before it overbooks.', copy: 'Track available appointments across the week and move overflow demand into the next opening.', used: 35, limit: 42, usedLabel: 'booked' },
+      meals: { label: 'Meal prep capacity', headline: 'Know when the kitchen is full.', copy: 'See weekly order volume, protect prep capacity, and move late demand into the next cycle.', used: 24, limit: 30, usedLabel: 'orders' },
+      lawn: { label: 'Lawn care capacity', headline: 'Build a route you can deliver.', copy: 'Track scheduled properties against the crew’s weekly limit before adding another stop.', used: 21, limit: 25, usedLabel: 'scheduled' },
+      detail: { label: 'Detailing capacity', headline: 'Fill bays without creating a pileup.', copy: 'See booked vehicles, open slots, and where the next qualified customer can fit.', used: 12, limit: 16, usedLabel: 'vehicles' }
+    };
+
+    document.getElementById('businessTabs').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-business]');
+      if (!button) return;
+      document.querySelectorAll('[data-business]').forEach((item) => item.classList.toggle('active', item === button));
+      const data = capacityData[button.dataset.business];
+      const remaining = data.limit - data.used;
+      document.getElementById('capacityLabel').textContent = data.label;
+      document.getElementById('capacityHeadline').textContent = data.headline;
+      document.getElementById('capacityCopy').textContent = data.copy;
+      document.getElementById('capacityUsedStat').textContent = data.used;
+      document.getElementById('capacityLimitStat').textContent = data.limit;
+      document.getElementById('capacityUsedLabel').textContent = data.usedLabel;
+      document.getElementById('capacityRemainingDemo').textContent = remaining;
+      document.getElementById('bigCapacity').style.setProperty('--cap-angle', `${Math.round(data.used / data.limit * 360)}deg`);
+    });
+
+    const menuToggle = document.getElementById('menuToggle');
+    const navLinks = document.getElementById('navLinks');
+    menuToggle.addEventListener('click', () => {
+      const open = navLinks.classList.toggle('open');
+      menuToggle.setAttribute('aria-expanded', String(open));
+      menuToggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+      menuToggle.textContent = open ? '×' : '☰';
+    });
+    navLinks.addEventListener('click', () => {
+      navLinks.classList.remove('open');
+      menuToggle.setAttribute('aria-expanded', 'false');
+      menuToggle.setAttribute('aria-label', 'Open navigation');
+      menuToggle.textContent = '☰';
+    });
+
+    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+    }), { threshold: .12 });
+    document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
