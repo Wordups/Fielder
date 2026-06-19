@@ -66,20 +66,43 @@ This repo currently holds the **public marketing / landing page** (`index.html`)
 
 ```
 Fielder/
-├── index.html   # standalone landing page (the marketing front door)
-└── README.md
+├── index.html        # marketing landing page (the front door)
+├── onboarding.html   # ✨ "materials → business page" — upload a poster/IG, AI builds the config
+├── biz.html          # config-driven public business page (?slug=name or ?c=<config>)
+├── dashboard.html    # owner dashboard (placeholder login; reads ?c=<config>)
+├── clients/          # example business configs (mikecuts, glambyraye, freshplates)
+└── backend/          # PRIVATE extractor — Claude vision → BusinessConfig (needs API key)
 ```
 
-> GitHub Pages is fine for this public preview/marketing page **only**. It is not the product runtime — the owner dashboard, auth, and storage are a separate build and are not part of this static page.
+> GitHub Pages serves the static pages (`index`, `onboarding`, `biz`, `dashboard`, `clients/`) **only**. The `backend/` extractor and the owner dashboard's real auth/storage are a separate runtime — not part of the static site.
+
+---
+
+## The onboarding proof — materials → business page
+
+The Fielder thesis: a service owner's *existing* materials become a live page + dashboard in minutes. One config (`clients/<slug>.json`) drives both the public page and the owner dashboard.
+
+**Try it instantly (no backend):** open `biz.html?slug=glambyraye` (a makeup artist), `?slug=mikecuts` (barber), or `?slug=freshplates` (meal prep). Each renders a branded page with services, a flow-aware CTA, and a contact form.
+
+**The AI magic (needs the backend):** `onboarding.html` lets you upload a flyer photo or an Instagram-bio screenshot (or paste text). The `backend/` service runs **Claude vision + structured outputs** (`claude-opus-4-8`, `messages.parse` → a Pydantic `BusinessConfig`) to extract the business name, services, prices, flow, brand color, and contact — then previews the live page and dashboard.
+
+```bash
+cd backend
+python -m pip install -r requirements.txt
+cp .env.example .env   # add your ANTHROPIC_API_KEY
+uvicorn app:app --reload --port 8000
+```
+
+Then open `onboarding.html`, point it at `http://localhost:8000`, and drop in a poster. The API key lives only in the backend — it can't be on the static page.
 
 ---
 
 ## Roadmap (not built here yet)
 
-- Owner dashboard, auth, and persistent lead storage
+- Owner dashboard real auth + persistent lead storage (Supabase)
 - Intake → booking integration (Calendly or equivalent)
 - Email notifications, then SMS after confirmation (confirmations, reminders, reactivation, ghost-recovery)
-- Per-client onboarding that generates a configured site automatically
+- Hosting generated configs per client at `name.fielder.app`
 
 ---
 

@@ -1,0 +1,22 @@
+{
+  "businessName": "Glam by Raye",
+  "slug": "glambyraye",
+  "industry": "makeup artist",
+  "flow": "appointment",
+  "tagline": "Soft glam, bridal, and editorial looks — I come to you.",
+  "brandColor": "#c25e7a",
+  "about": "Atlanta-based makeup artist with 7 years behind the chair. Bridal parties, photoshoots, and a glam-on-the-go service for events.",
+  "contact": {
+    "email": "",
+    "phone": "",
+    "instagram": "@glambyraye",
+    "location": "Atlanta, GA"
+  },
+  "services": [
+    { "name": "Bridal glam", "price": "$250", "description": "Trial + day-of application, lashes included." },
+    { "name": "Event / soft glam", "price": "$120", "description": "Full face for parties, dates, photoshoots." },
+    { "name": "Makeup lesson", "price": "$90", "description": "1-on-1 — learn your everyday face." },
+    { "name": "Bridal party (per person)", "price": "$95", "description": "Group rate for the wedding party." }
+  ],
+  "portfolio": []
+}

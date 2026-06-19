@@ -178,7 +178,7 @@
       <aside class="sidebar">
         <div class="workspace">
           <div class="avatar" style="width:36px;height:36px">MC</div>
-          <div><small>Workspace</small><strong>Mike Cuts</strong></div>
+          <div><small>Workspace</small><strong id="wsName">Mike Cuts</strong></div>
         </div>
         <nav class="side-nav" id="sideNav" aria-label="Dashboard views">
           <button class="active" data-view="overview"><span class="ic">⌂</span>Overview</button>
@@ -373,7 +373,22 @@
       document.querySelectorAll('#flowTabs .flow-tab').forEach((t) => t.classList.toggle('active', t === tab));
       renderFlow(tab.dataset.flow);
     });
-    renderFlow('appointment');
+    // Hydrate from an onboarding config (?c=<base64url JSON>) when present,
+    // else fall back to the barber demo.
+    (function () {
+      const p = new URLSearchParams(location.search);
+      let cfg = null;
+      if (p.get('c')) {
+        try { cfg = JSON.parse(decodeURIComponent(escape(atob(p.get('c').replace(/-/g, '+').replace(/_/g, '/'))))); } catch (e) { cfg = null; }
+      }
+      const flow = (cfg && ['appointment', 'quote', 'capacity', 'membership'].includes(cfg.flow)) ? cfg.flow : 'appointment';
+      if (cfg && cfg.businessName) {
+        document.title = cfg.businessName + ' — Fielder dashboard';
+        const ws = document.getElementById('wsName'); if (ws) ws.textContent = cfg.businessName;
+        document.querySelectorAll('#flowTabs .flow-tab').forEach((t) => t.classList.toggle('active', t.dataset.flow === flow));
+      }
+      renderFlow(flow);
+    })();
   </script>
 </body>
 </html>

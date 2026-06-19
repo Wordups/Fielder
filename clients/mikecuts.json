@@ -1,0 +1,22 @@
+{
+  "businessName": "Mike's Cuts",
+  "slug": "mikecuts",
+  "industry": "barber",
+  "flow": "appointment",
+  "tagline": "Fresh fades and line-ups, on your schedule.",
+  "brandColor": "#3da35d",
+  "about": "Walk-in energy, appointment precision. Fades, beard work, and kids' cuts in the heart of the city.",
+  "contact": {
+    "email": "",
+    "phone": "",
+    "instagram": "@mikecuts",
+    "location": "Atlanta, GA"
+  },
+  "services": [
+    { "name": "Fade", "price": "$35", "description": "Skin, taper, or drop — your call." },
+    { "name": "Fade + line-up", "price": "$45" },
+    { "name": "Beard trim", "price": "$20" },
+    { "name": "Kids' cut", "price": "$25" }
+  ],
+  "portfolio": []
+}

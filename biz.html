@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your Fielder business page</title>
+<meta name="robots" content="noindex" />
+<style>
+  :root{
+    --ink:#10251f; --paper:#f4f1e8; --paper-2:#eae6d9; --white:#fffdf7;
+    --muted:#66756f; --line:rgba(16,37,31,.14); --brand:#3da35d;
+    --display:"DM Serif Display",Georgia,serif; --sans:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.55}
+  a{color:inherit}
+  .wrap{width:min(960px,calc(100% - 40px));margin-inline:auto}
+  .hero{padding:84px 0 56px;background:var(--ink);color:var(--white);position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;right:-120px;top:-160px;width:480px;height:480px;border-radius:50%;border:1px solid color-mix(in srgb,var(--brand) 45%,transparent)}
+  .eyebrow{display:inline-block;color:var(--brand);font-size:.7rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px}
+  .hero h1{font-family:var(--display);font-weight:400;font-size:clamp(2.6rem,7vw,4.6rem);line-height:1;letter-spacing:-.02em}
+  .hero p.tag{margin-top:18px;max-width:560px;color:rgba(255,255,255,.72);font-size:1.1rem}
+  .hero .meta{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:6px 13px;font-size:.78rem;color:rgba(255,255,255,.85)}
+  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:13px 22px;font-weight:800;font-size:.9rem;text-decoration:none;border:1px solid var(--brand);background:var(--brand);color:#fff;cursor:pointer}
+  .btn--ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+  section.block{padding:56px 0}
+  h2{font-family:var(--display);font-weight:400;font-size:clamp(1.8rem,4vw,2.6rem);margin-bottom:8px}
+  .sub{color:var(--muted);margin-bottom:26px}
+  .services{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+  .svc{border:1px solid var(--line);border-radius:14px;padding:20px;background:var(--white)}
+  .svc h3{font-size:1.1rem;display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .svc .price{color:var(--brand);font-weight:800;white-space:nowrap}
+  .svc p{color:var(--muted);font-size:.86rem;margin-top:6px}
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+  .gallery img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
+  .contact{background:var(--paper-2)}
+  form{display:grid;gap:12px;max-width:520px}
+  label{font-size:.66rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:13px 14px;background:var(--white);font:inherit;font-size:.92rem}
+  textarea{min-height:96px;resize:vertical}
+  .field{display:grid;gap:6px}
+  footer{padding:34px 0;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem}
+  .note{font-size:.74rem;color:var(--muted)}
+  .powered{display:inline-flex;align-items:center;gap:7px;font-weight:800;color:var(--ink)}
+  .powered .dot{width:9px;height:9px;border-radius:50%;background:var(--brand)}
+  .empty{padding:60px 0;text-align:center;color:var(--muted)}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app"><div class="empty wrap">Loading business…</div></div>
+
+<script>
+const FLOW = {
+  appointment: { cta: "Book appointment", verb: "book" },
+  quote:       { cta: "Request a quote",  verb: "quote" },
+  capacity:    { cta: "Reserve your spot",verb: "reserve" },
+  membership:  { cta: "Join / Subscribe", verb: "subscribe" },
+};
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function decodeConfig(c){
+  try { return JSON.parse(decodeURIComponent(escape(atob(c.replace(/-/g,"+").replace(/_/g,"/"))))); }
+  catch { return null; }
+}
+
+async function loadConfig(){
+  const p = new URLSearchParams(location.search);
+  if (p.get("c")) return decodeConfig(p.get("c"));
+  if (p.get("slug")) {
+    try { const r = await fetch(`clients/${p.get("slug")}.json`,{cache:"no-store"}); if (r.ok) return r.json(); } catch {}
+  }
+  return null;
+}
+
+function render(cfg){
+  const app = document.getElementById("app");
+  if (!cfg || !cfg.businessName){ app.innerHTML = `<div class="empty wrap">No business config. Open this page from onboarding, or add <code>?slug=name</code>.</div>`; return; }
+  if (cfg.brandColor) document.documentElement.style.setProperty("--brand", cfg.brandColor);
+  document.title = cfg.businessName + " — Fielder";
+
+  const flow = FLOW[cfg.flow] || FLOW.appointment;
+  const c = cfg.contact || {};
+  const meta = [c.location, c.instagram, c.phone].filter(Boolean)
+    .map(x => `<span class="chip">${esc(x)}</span>`).join("");
+
+  const services = (cfg.services||[]).length
+    ? `<section class="block wrap"><h2>Services</h2><p class="sub">What ${esc(cfg.businessName)} offers.</p>
+        <div class="services">${cfg.services.map(s=>`
+          <div class="svc"><h3>${esc(s.name)}${s.price?`<span class="price">${esc(s.price)}</span>`:""}</h3>
+          ${s.description?`<p>${esc(s.description)}</p>`:""}</div>`).join("")}</div></section>` : "";
+
+  const gallery = (cfg.portfolio||[]).length
+    ? `<section class="block wrap"><h2>Work</h2><div class="gallery">${cfg.portfolio.map(u=>`<img src="${esc(u)}" alt="" loading="lazy">`).join("")}</div></section>` : "";
+
+  const about = cfg.about ? `<section class="block wrap"><h2>About</h2><p class="sub" style="max-width:640px">${esc(cfg.about)}</p></section>` : "";
+
+  const formAction = c.email ? `https://formsubmit.co/${esc(c.email)}` : "";
+  const intake = `
+    <section class="block contact"><div class="wrap">
+      <h2>${flow.cta}</h2>
+      <p class="sub">Send your details and ${esc(cfg.businessName)} will follow up.</p>
+      <form ${formAction?`action="${formAction}" method="POST"`:""} onsubmit="${formAction?"":"event.preventDefault();alert('Demo: owner email not set, so this is preview-only.');"}">
+        <input type="hidden" name="_subject" value="New ${esc(flow.verb)} request — ${esc(cfg.businessName)}">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="text" name="_honey" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+        <div class="field"><label>Your name</label><input name="name" required></div>
+        <div class="field"><label>Email or phone</label><input name="contact" required></div>
+        <div class="field"><label>What do you need?</label><textarea name="message" placeholder="e.g. ${esc((cfg.services||[])[0]?.name || 'service')} — preferred day/time"></textarea></div>
+        <button class="btn" type="submit">${flow.cta} →</button>
+        ${formAction?"":`<p class="note">Owner email wasn't detected, so submissions are disabled in this preview.</p>`}
+      </form>
+    </div></section>`;
+
+  app.innerHTML = `
+    <header class="hero"><div class="wrap">
+      <span class="eyebrow">${esc((cfg.industry||"local service").replace(/_/g," "))}</span>
+      <h1>${esc(cfg.businessName)}</h1>
+      ${cfg.tagline?`<p class="tag">${esc(cfg.tagline)}</p>`:""}
+      ${meta?`<div class="meta">${meta}</div>`:""}
+      <div style="margin-top:26px"><a class="btn" href="#go">${flow.cta} →</a></div>
+    </div></header>
+    ${services}${gallery}${about}
+    <a id="go"></a>${intake}
+    <footer><div class="wrap"><span class="powered"><span class="dot"></span>Built on Fielder</span></div></footer>`;
+}
+
+loadConfig().then(render);
+</script>
+</body>
+</html>

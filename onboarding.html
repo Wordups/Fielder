@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fielder — Onboard a business in minutes</title>
+<meta name="robots" content="noindex" />
+<style>
+  :root{--ink:#10251f;--paper:#f4f1e8;--paper-2:#eae6d9;--white:#fffdf7;--muted:#66756f;--line:rgba(16,37,31,.14);--brand:#3da35d;
+    --display:"DM Serif Display",Georgia,serif;--sans:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.55}
+  .wrap{width:min(880px,calc(100% - 36px));margin-inline:auto}
+  header{padding:48px 0 10px}
+  .eyebrow{color:var(--brand);font-size:.7rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+  h1{font-family:var(--display);font-weight:400;font-size:clamp(2.2rem,6vw,3.4rem);line-height:1.02;margin:10px 0}
+  p.lede{color:var(--muted);max-width:600px}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:22px;margin:18px 0}
+  h2{font-family:var(--display);font-weight:400;font-size:1.5rem;margin-bottom:4px}
+  .muted{color:var(--muted);font-size:.86rem}
+  label{display:block;font-size:.66rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+  input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:var(--paper);font:inherit;font-size:.92rem}
+  textarea{min-height:96px;resize:vertical}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:620px){.row{grid-template-columns:1fr}}
+  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:12px 20px;font-weight:800;font-size:.88rem;border:1px solid var(--brand);background:var(--brand);color:#fff;cursor:pointer;text-decoration:none}
+  .btn--ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .status{font-size:.82rem;margin-top:10px;min-height:1.2em}
+  .status.err{color:#b4453a}.status.ok{color:#3f7a2e}
+  .examples{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .examples a{border:1px solid var(--line);border-radius:99px;padding:7px 13px;font-size:.8rem;font-weight:700;text-decoration:none;background:var(--white)}
+  .swatch{display:inline-block;width:16px;height:16px;border-radius:4px;border:1px solid var(--line);vertical-align:middle}
+  .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:.74rem;margin:14px 0}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+  details summary{cursor:pointer;font-size:.8rem;color:var(--muted)}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="wrap">
+  <span class="eyebrow">Three-minute onboarding</span>
+  <h1>Turn a flyer or an Instagram into a business page.</h1>
+  <p class="lede">Upload a poster, a screenshot of their IG bio, or paste their services. Fielder reads it, builds a branded page and an owner dashboard — then they're live.</p>
+  <div class="examples"><span class="muted" style="align-self:center">See it instantly:</span>
+    <a href="biz.html?slug=mikecuts">Mike's Cuts (barber)</a>
+    <a href="biz.html?slug=glambyraye">Glam by Raye (makeup artist)</a>
+    <a href="biz.html?slug=freshplates">Fresh Plates (meal prep)</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="card">
+    <h2>1. Drop in what they already have</h2>
+    <p class="muted">A poster photo, an IG-bio screenshot, or pasted text. Either or both.</p>
+    <label>Poster / Instagram screenshot</label>
+    <input type="file" id="image" accept="image/*">
+    <div class="divider">and / or</div>
+    <label>Paste their bio or service list</label>
+    <textarea id="text" placeholder="Glam by Raye — Atlanta makeup artist. Bridal $250, glam $120, lesson $90. DM @glambyraye"></textarea>
+    <div class="actions">
+      <button class="btn" id="extract">✨ Extract with AI</button>
+      <button class="btn btn--ghost" id="manual">Fill in manually</button>
+    </div>
+    <div class="status" id="status"></div>
+    <details style="margin-top:12px"><summary>Backend settings</summary>
+      <label>Extractor URL (the private backend running app.py)</label>
+      <input id="backend" placeholder="http://localhost:8000">
+      <p class="muted" style="margin-top:6px">AI extraction needs the backend (an API key can't live in this static page). Without it, use “Fill in manually”.</p>
+    </details>
+  </div>
+
+  <div class="card" id="editor" hidden>
+    <h2>2. Review &amp; tweak</h2>
+    <p class="muted">Fielder filled this in — edit anything before you publish.</p>
+    <div class="row">
+      <div><label>Business name</label><input id="f-name"></div>
+      <div><label>Slug</label><input id="f-slug"></div>
+    </div>
+    <div class="row">
+      <div><label>Industry</label><input id="f-industry" placeholder="makeup artist"></div>
+      <div><label>Flow</label>
+        <select id="f-flow">
+          <option value="appointment">Appointment (time slots)</option>
+          <option value="quote">Quote (estimate then schedule)</option>
+          <option value="capacity">Capacity (batch / routes)</option>
+          <option value="membership">Membership (recurring)</option>
+        </select>
+      </div>
+    </div>
+    <label>Tagline</label><input id="f-tagline">
+    <div class="row">
+      <div><label>Brand color <span class="swatch" id="sw"></span></label><input id="f-brand" placeholder="#3da35d"></div>
+      <div><label>Owner email (receives leads)</label><input id="f-email" placeholder="owner@business.com"></div>
+    </div>
+    <div class="row">
+      <div><label>Instagram</label><input id="f-ig" placeholder="@handle"></div>
+      <div><label>Location</label><input id="f-loc" placeholder="City, ST"></div>
+    </div>
+    <label>Services — one per line, optional “| price”</label>
+    <textarea id="f-services" placeholder="Bridal glam | $250&#10;Event glam | $120&#10;Makeup lesson | $90"></textarea>
+    <div class="actions">
+      <a class="btn" id="preview" target="_blank" rel="noopener">Preview business page ↗</a>
+      <a class="btn btn--ghost" id="dash" target="_blank" rel="noopener">Preview dashboard ↗</a>
+      <button class="btn btn--ghost" id="download">Download config</button>
+    </div>
+    <div class="status" id="status2"></div>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const backendDefault = "http://localhost:8000";
+$("backend").value = localStorage.getItem("fielder_backend") || backendDefault;
+
+function b64url(obj){
+  const s = btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+  return s.replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function slugify(s){ return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); }
+
+function readForm(){
+  const services = $("f-services").value.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{
+    const [name,price] = l.split("|").map(x=>x.trim());
+    return price ? {name,price} : {name};
+  });
+  return {
+    businessName: $("f-name").value.trim(),
+    slug: $("f-slug").value.trim() || slugify($("f-name").value),
+    industry: $("f-industry").value.trim(),
+    flow: $("f-flow").value,
+    tagline: $("f-tagline").value.trim() || null,
+    brandColor: $("f-brand").value.trim() || null,
+    contact: {
+      email: $("f-email").value.trim() || null,
+      instagram: $("f-ig").value.trim() || null,
+      location: $("f-loc").value.trim() || null,
+    },
+    services,
+  };
+}
+function fillForm(c){
+  c = c || {};
+  $("f-name").value=c.businessName||""; $("f-slug").value=c.slug||slugify(c.businessName);
+  $("f-industry").value=c.industry||""; $("f-flow").value=c.flow||"appointment";
+  $("f-tagline").value=c.tagline||""; $("f-brand").value=c.brandColor||"";
+  const ct=c.contact||{}; $("f-email").value=ct.email||""; $("f-ig").value=ct.instagram||""; $("f-loc").value=ct.location||"";
+  $("f-services").value=(c.services||[]).map(s=>s.price?`${s.name} | ${s.price}`:s.name).join("\n");
+  $("editor").hidden=false; refreshLinks();
+}
+function refreshLinks(){
+  const cfg=readForm();
+  $("preview").href="biz.html?c="+b64url(cfg);
+  $("dash").href="dashboard.html?c="+b64url(cfg);
+  $("sw").style.background=cfg.brandColor||"#3da35d";
+}
+["f-name","f-slug","f-industry","f-flow","f-tagline","f-brand","f-email","f-ig","f-loc","f-services"]
+  .forEach(id=>$(id).addEventListener("input",refreshLinks));
+
+$("manual").addEventListener("click",()=>fillForm({flow:"appointment"}));
+
+$("extract").addEventListener("click",async()=>{
+  const st=$("status"); const backend=($("backend").value||backendDefault).replace(/\/$/,"");
+  localStorage.setItem("fielder_backend",backend);
+  const file=$("image").files[0]; const text=$("text").value.trim();
+  if(!file && !text){ st.className="status err"; st.textContent="Add an image or some text first."; return; }
+  st.className="status"; st.textContent="Reading the material with Claude…";
+  $("extract").disabled=true;
+  try{
+    const fd=new FormData();
+    if(file) fd.append("image",file);
+    if(text) fd.append("text",text);
+    const r=await fetch(backend+"/api/extract",{method:"POST",body:fd});
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.detail||("HTTP "+r.status));
+    st.className="status ok"; st.textContent="Got it — review below.";
+    fillForm(data);
+  }catch(e){
+    st.className="status err";
+    st.textContent="Extraction failed: "+e.message+" — is the backend running? You can also fill it in manually.";
+  }finally{ $("extract").disabled=false; }
+});
+
+$("download").addEventListener("click",()=>{
+  const cfg=readForm(); const blob=new Blob([JSON.stringify(cfg,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=(cfg.slug||"business")+".json"; a.click();
+  $("status2").className="status ok"; $("status2").textContent="Saved "+(cfg.slug||"business")+".json — drop it in clients/ to host at biz.html?slug="+cfg.slug;
+});
+</script>
+</body>
+</html>

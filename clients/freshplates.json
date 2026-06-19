@@ -1,0 +1,21 @@
+{
+  "businessName": "Fresh Plates",
+  "slug": "freshplates",
+  "industry": "meal_prep",
+  "flow": "capacity",
+  "tagline": "Chef-made meals, prepped weekly, delivered to your door.",
+  "brandColor": "#e07a1f",
+  "about": "Macro-friendly meal prep cooked fresh every Sunday. Reserve your slot for the week before the kitchen fills up.",
+  "contact": {
+    "email": "",
+    "phone": "",
+    "instagram": "@freshplates",
+    "location": "Atlanta, GA"
+  },
+  "services": [
+    { "name": "5 meals / week", "price": "$60", "description": "Pick your proteins and sides." },
+    { "name": "10 meals / week", "price": "$110" },
+    { "name": "Family pack (4 servings x5)", "price": "$160" }
+  ],
+  "portfolio": []
+}
