@@ -95,6 +95,17 @@ uvicorn app:app --reload --port 8000
 
 Then open `onboarding.html`, point it at `http://localhost:8000`, and drop in a poster. The API key lives only in the backend — it can't be on the static page.
 
+### Real owner auth + portfolio uploads (Supabase)
+
+The dashboard login and onboarding portfolio uploads run **client-side via Supabase** — its anon key is public-safe (Row Level Security protects data), so this works on GitHub Pages with no extra backend. Fill in `fielder-config.js`:
+
+1. Create a project at supabase.com → **Settings → API** for the project URL + **anon** key (never the service_role key).
+2. Enable **Email** auth (Authentication → Providers).
+3. Create a **public** Storage bucket named `portfolios`.
+4. Put the URL + anon key in `fielder-config.js`.
+
+Then `dashboard.html` uses real Supabase email/password auth (sessions persist; "Sign out" really signs out), and `onboarding.html` uploads portfolio photos to Storage and writes their public URLs into the config. Leave `fielder-config.js` blank and everything degrades gracefully to demo mode (placeholder login; paste-URL portfolio).
+
 ---
 
 ## Roadmap (not built here yet)

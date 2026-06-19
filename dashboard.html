@@ -144,6 +144,8 @@
       .demo-flag span { display: none; }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="fielder-config.js"></script>
 </head>
 <body>
 
@@ -287,32 +289,66 @@
   </div>
 
   <script>
-    // --- Placeholder auth (client-side only; replaced with real auth later) ---
-    const SESSION_KEY = 'fielder_demo_auth';
+    // --- Auth: real Supabase when configured (fielder-config.js), else placeholder demo ---
+    const FCFG = window.FIELDER || {};
+    const sb = (FCFG.SUPABASE_URL && FCFG.SUPABASE_ANON_KEY && window.supabase)
+      ? window.supabase.createClient(FCFG.SUPABASE_URL, FCFG.SUPABASE_ANON_KEY)
+      : null;
     const login = document.getElementById('login');
     const app = document.getElementById('app');
+    const loginForm = document.getElementById('loginForm');
+    const loginNote = document.querySelector('.login__note');
 
-    function showApp() { login.hidden = true; app.hidden = false; }
-    function showLogin() { app.hidden = true; login.hidden = false; }
-
-    if (sessionStorage.getItem(SESSION_KEY) === '1') showApp();
-
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const email = document.getElementById('lg-email').value.trim();
+    function showApp(email) {
       if (email) {
         document.getElementById('whoami').textContent = email;
         document.getElementById('avatar').textContent =
-          (email[0] || 'M').toUpperCase() + (email.split('@')[0].slice(-1) || 'C').toUpperCase();
+          (email[0] || 'M').toUpperCase() + ((email.split('@')[0] || '').slice(-1) || 'C').toUpperCase();
       }
-      sessionStorage.setItem(SESSION_KEY, '1');
-      showApp();
-    });
+      login.hidden = true; app.hidden = false;
+    }
+    function showLogin() { app.hidden = true; login.hidden = false; }
+    function loginMsg(html, isErr) {
+      if (loginNote) { loginNote.innerHTML = html; loginNote.style.color = isErr ? '#aa4934' : ''; }
+    }
 
-    document.getElementById('signout').addEventListener('click', () => {
-      sessionStorage.removeItem(SESSION_KEY);
-      showLogin();
-    });
+    if (sb) {
+      // Real auth. Sessions persist in localStorage via Supabase; onAuthStateChange drives the UI.
+      loginMsg('<strong>Secure login</strong> via Supabase. New here? Enter an email + password and confirm the create-account prompt.');
+      sb.auth.getSession().then(({ data }) => { if (data.session) showApp(data.session.user.email); });
+      sb.auth.onAuthStateChange((_evt, session) => { session ? showApp(session.user.email) : showLogin(); });
+
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('lg-email').value.trim();
+        const password = document.getElementById('lg-pass').value;
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) {
+          if (window.confirm('Could not sign in. Create a new account with this email?')) {
+            const { error: signupErr } = await sb.auth.signUp({ email, password });
+            loginMsg(signupErr ? signupErr.message : 'Account created — check your email to confirm, then sign in.', !!signupErr);
+          } else {
+            loginMsg(error.message, true);
+          }
+        }
+        // success path: onAuthStateChange shows the app
+      });
+
+      document.getElementById('signout').addEventListener('click', () => sb.auth.signOut());
+    } else {
+      // Demo mode (no Supabase configured): any credentials open the sample dashboard.
+      const SESSION_KEY = 'fielder_demo_auth';
+      if (sessionStorage.getItem(SESSION_KEY) === '1') showApp();
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        sessionStorage.setItem(SESSION_KEY, '1');
+        showApp(document.getElementById('lg-email').value.trim());
+      });
+      document.getElementById('signout').addEventListener('click', () => {
+        sessionStorage.removeItem(SESSION_KEY);
+        showLogin();
+      });
+    }
 
     // --- View switching ---
     const navButtons = document.querySelectorAll('#sideNav button');

@@ -38,6 +38,8 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="fielder-config.js"></script>
 </head>
 <body>
 <header class="wrap">
@@ -101,6 +103,10 @@
     </div>
     <label>Services — one per line, optional “| price”</label>
     <textarea id="f-services" placeholder="Bridal glam | $250&#10;Event glam | $120&#10;Makeup lesson | $90"></textarea>
+    <label>Portfolio images</label>
+    <input type="file" id="f-portfolio-files" accept="image/*" multiple>
+    <p class="muted" id="f-portfolio-status" style="margin-top:6px">Upload work photos (needs Supabase Storage) or paste image URLs below — one per line.</p>
+    <textarea id="f-portfolio" placeholder="https://…/work1.jpg&#10;https://…/work2.jpg"></textarea>
     <div class="actions">
       <a class="btn" id="preview" target="_blank" rel="noopener">Preview business page ↗</a>
       <a class="btn btn--ghost" id="dash" target="_blank" rel="noopener">Preview dashboard ↗</a>
@@ -139,6 +145,7 @@ function readForm(){
       location: $("f-loc").value.trim() || null,
     },
     services,
+    portfolio: $("f-portfolio").value.split("\n").map(l=>l.trim()).filter(Boolean),
   };
 }
 function fillForm(c){
@@ -148,6 +155,7 @@ function fillForm(c){
   $("f-tagline").value=c.tagline||""; $("f-brand").value=c.brandColor||"";
   const ct=c.contact||{}; $("f-email").value=ct.email||""; $("f-ig").value=ct.instagram||""; $("f-loc").value=ct.location||"";
   $("f-services").value=(c.services||[]).map(s=>s.price?`${s.name} | ${s.price}`:s.name).join("\n");
+  $("f-portfolio").value=(c.portfolio||[]).join("\n");
   $("editor").hidden=false; refreshLinks();
 }
 function refreshLinks(){
@@ -156,8 +164,32 @@ function refreshLinks(){
   $("dash").href="dashboard.html?c="+b64url(cfg);
   $("sw").style.background=cfg.brandColor||"#3da35d";
 }
-["f-name","f-slug","f-industry","f-flow","f-tagline","f-brand","f-email","f-ig","f-loc","f-services"]
+["f-name","f-slug","f-industry","f-flow","f-tagline","f-brand","f-email","f-ig","f-loc","f-services","f-portfolio"]
   .forEach(id=>$(id).addEventListener("input",refreshLinks));
+
+// Portfolio uploads → Supabase Storage (public URLs) when configured; else paste URLs.
+const FCFG = window.FIELDER || {};
+const sbOnb = (FCFG.SUPABASE_URL && FCFG.SUPABASE_ANON_KEY && window.supabase)
+  ? window.supabase.createClient(FCFG.SUPABASE_URL, FCFG.SUPABASE_ANON_KEY) : null;
+$("f-portfolio-files").addEventListener("change", async (e)=>{
+  const files=[...e.target.files]; if(!files.length) return;
+  const st=$("f-portfolio-status");
+  if(!sbOnb){ st.style.color="#b4453a"; st.textContent="Add Supabase keys in fielder-config.js to upload — or paste image URLs below."; return; }
+  st.style.color=""; st.textContent="Uploading "+files.length+" image(s)…";
+  const bucket=FCFG.STORAGE_BUCKET||"portfolios";
+  const slug=$("f-slug").value||slugify($("f-name").value)||"biz";
+  const urls=[];
+  for(const f of files){
+    const path=`${slug}/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9.\-]/g,"_")}`;
+    const {error}=await sbOnb.storage.from(bucket).upload(path,f,{upsert:false});
+    if(error){ st.style.color="#b4453a"; st.textContent="Upload failed: "+error.message; return; }
+    urls.push(sbOnb.storage.from(bucket).getPublicUrl(path).data.publicUrl);
+  }
+  const existing=$("f-portfolio").value.trim();
+  $("f-portfolio").value=(existing?existing+"\n":"")+urls.join("\n");
+  st.style.color="#3f7a2e"; st.textContent="Uploaded "+urls.length+" image(s).";
+  refreshLinks();
+});
 
 $("manual").addEventListener("click",()=>fillForm({flow:"appointment"}));
 
