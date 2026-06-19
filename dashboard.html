@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Fielder owner dashboard — leads, pipeline, customer health, and capacity for your service business.">
+  <meta name="theme-color" content="#10251f">
+  <title>Fielder — Owner dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #10251f; --ink-2: #18362d; --paper: #f4f1e8; --paper-2: #eae6d9; --white: #fffdf7;
+      --lime: #b9ed68; --lime-dark: #83bd2d; --coral: #ff7657; --blue: #4b7cf4; --gold: #e6aa36;
+      --muted: #66756f; --line: rgba(16,37,31,.14);
+      --display: "DM Serif Display", Georgia, serif; --sans: "Manrope", system-ui, sans-serif;
+      --shadow: 0 24px 70px rgba(16,37,31,.13);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    [hidden] { display: none !important; }
+    a { color: inherit; }
+
+    .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 800; letter-spacing: -.03em; text-decoration: none; }
+    .brand__mark { position: relative; width: 30px; height: 30px; overflow: hidden; border-radius: 8px 8px 8px 2px; background: var(--lime); box-shadow: inset 0 0 0 1px rgba(16,37,31,.1); flex: none; }
+    .brand__mark::before { content: ""; position: absolute; left: 7px; top: 7px; right: -3px; height: 2px; background: var(--ink); transform: rotate(-38deg); transform-origin: left; box-shadow: 0 6px 0 var(--ink), 0 12px 0 var(--ink); }
+    .button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--ink); border-radius: 999px; padding: 11px 18px; background: var(--ink); color: white; font-size: .82rem; font-weight: 800; text-decoration: none; transition: transform .15s ease, background .15s ease; }
+    .button:hover { transform: translateY(-1px); }
+    .button--lime { border-color: var(--lime); background: var(--lime); color: var(--ink); }
+    .button--ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+
+    /* Login */
+    .login { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 22px; background: radial-gradient(120% 120% at 80% -10%, #1d3d33, var(--ink) 60%); color: white; }
+    .login__card { width: min(420px, 100%); border-radius: 20px; padding: clamp(26px, 5vw, 40px); background: var(--white); color: var(--ink); box-shadow: 0 40px 100px rgba(0,0,0,.4); }
+    .login__card .brand { margin-bottom: 22px; }
+    .login__card h1 { margin: 0 0 4px; font-family: var(--display); font-size: 2rem; font-weight: 400; }
+    .login__card > p { margin: 0 0 22px; color: var(--muted); font-size: .86rem; }
+    .field { display: grid; gap: 6px; margin-bottom: 15px; }
+    .field label { font-size: .66rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+    .field input { width: 100%; border: 1px solid var(--line); border-radius: 11px; padding: 13px 14px; background: var(--paper); color: var(--ink); font-size: .9rem; }
+    .field input:focus { outline: 2px solid var(--lime-dark); outline-offset: 1px; border-color: transparent; }
+    .login__card .button { width: 100%; margin-top: 6px; }
+    .login__note { margin: 16px 0 0; padding: 11px 13px; border-radius: 10px; background: #fff4d6; color: #7a5a09; font-size: .72rem; }
+    .login__back { display: block; margin-top: 16px; text-align: center; color: rgba(255,255,255,.7); font-size: .76rem; text-decoration: none; }
+
+    /* App shell */
+    .topbar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; padding: 0 clamp(16px, 3vw, 28px); border-bottom: 1px solid var(--line); background: var(--white); }
+    .topbar__right { display: flex; align-items: center; gap: 12px; }
+    .demo-flag { display: inline-flex; align-items: center; gap: 6px; border-radius: 99px; padding: 5px 11px; background: #fff4d6; color: #7a5a09; font-size: .64rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .avatar { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: white; font-size: .7rem; font-weight: 800; }
+
+    .shell { display: grid; grid-template-columns: 232px 1fr; align-items: start; }
+    .sidebar { position: sticky; top: 64px; align-self: start; height: calc(100vh - 64px); padding: 20px 14px; border-right: 1px solid var(--line); background: var(--white); }
+    .workspace { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; border-radius: 12px; padding: 12px; background: var(--paper); }
+    .workspace small { display: block; color: var(--muted); font-size: .56rem; letter-spacing: .08em; text-transform: uppercase; }
+    .workspace strong { font-size: .9rem; }
+    .side-nav { display: grid; gap: 4px; }
+    .side-nav button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; border-radius: 9px; padding: 11px 12px; background: transparent; color: #57655f; font-size: .82rem; font-weight: 700; text-align: left; }
+    .side-nav button .ic { width: 18px; text-align: center; font-size: .95rem; }
+    .side-nav button:hover { background: var(--paper); }
+    .side-nav button.active { background: #e8f6d4; color: #4c7819; }
+    .sidebar__foot { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: .68rem; }
+
+    .content { min-width: 0; padding: clamp(18px, 3vw, 34px); }
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+    .page-head small { display: block; color: var(--muted); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; }
+    .page-head h2 { margin: 4px 0 0; font-family: var(--display); font-size: clamp(1.9rem, 3.5vw, 2.6rem); font-weight: 400; line-height: 1; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+    .kpi { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: var(--white); }
+    .kpi span { color: var(--muted); font-size: .66rem; letter-spacing: .04em; text-transform: uppercase; }
+    .kpi strong { display: block; margin-top: 6px; font-family: var(--display); font-size: 2.1rem; font-weight: 400; line-height: 1; }
+    .kpi em { font-style: normal; font-size: .68rem; font-weight: 700; }
+    .kpi em.up { color: var(--lime-dark); } .kpi em.down { color: var(--coral); }
+
+    .panels { display: grid; grid-template-columns: 1.1fr .9fr; gap: 14px; }
+    .panel { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: var(--white); }
+    .panel__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .panel__head strong { font-size: .92rem; }
+    .panel__head a { color: #4e7d18; font-size: .72rem; text-decoration: none; cursor: pointer; }
+
+    .capacity { display: flex; align-items: center; gap: 18px; }
+    .ring { width: 104px; height: 104px; flex: none; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--lime-dark) 0 var(--deg, 300deg), #e4e9e3 var(--deg, 300deg)); position: relative; }
+    .ring::before { content: ""; position: absolute; inset: 11px; border-radius: 50%; background: var(--white); }
+    .ring strong { position: relative; font-family: var(--display); font-size: 1.7rem; font-weight: 400; }
+    .capacity__copy span { color: var(--muted); font-size: .74rem; }
+    .capacity__copy strong { display: block; font-size: .96rem; margin-top: 2px; }
+    .bar { height: 7px; margin-top: 10px; border-radius: 99px; background: #e5e9e4; overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: inherit; background: var(--lime-dark); }
+
+    .hrow { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #edf0ec; }
+    .hrow:last-child { border: 0; }
+    .person { display: flex; align-items: center; gap: 10px; }
+    .person i { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; background: #edf2eb; color: var(--ink); font-size: .64rem; font-style: normal; font-weight: 800; }
+    .person strong { display: block; font-size: .82rem; }
+    .person span { display: block; color: var(--muted); font-size: .68rem; }
+    .pill { border-radius: 99px; padding: 4px 9px; font-size: .6rem; font-weight: 800; white-space: nowrap; }
+    .pill--great { background: #e3f5d0; color: #4c7819; }
+    .pill--active { background: #e2ecff; color: #2f53a8; }
+    .pill--risk { background: #fff0d2; color: #95620c; }
+    .pill--ghost { background: #ffe8e3; color: #aa4934; }
+    .pill--lost { background: #eef1ee; color: #6b7770; }
+
+    /* Pipeline */
+    .flow-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .flow-tab { border: 1px solid var(--line); border-radius: 99px; padding: 9px 15px; background: var(--white); color: var(--muted); font-size: .76rem; font-weight: 700; }
+    .flow-tab.active { border-color: var(--ink); background: var(--ink); color: white; }
+    .flow-tab.active b { color: var(--lime); font-weight: 800; }
+    .kanban { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+    .col { flex: 1 0 200px; min-width: 200px; border-radius: 12px; padding: 12px; background: var(--paper-2); }
+    .col header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; color: #54635c; font-size: .66rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .col header b { display: grid; place-items: center; min-width: 20px; height: 20px; border-radius: 99px; background: var(--white); color: var(--ink); font-size: .64rem; }
+    .kard { margin-bottom: 8px; border-radius: 9px; padding: 11px; background: var(--white); box-shadow: 0 3px 9px rgba(16,37,31,.05); }
+    .kard strong { display: block; font-size: .78rem; }
+    .kard span { color: var(--muted); font-size: .68rem; }
+
+    /* Table */
+    .table { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--white); }
+    .trow { display: grid; grid-template-columns: 1.4fr .8fr 1fr .6fr .8fr; gap: 10px; align-items: center; padding: 13px 16px; border-bottom: 1px solid #edf0ec; font-size: .8rem; }
+    .trow:last-child { border: 0; }
+    .trow--head { background: var(--paper); color: var(--muted); font-size: .62rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+    .trow strong { font-size: .84rem; }
+
+    @media (max-width: 860px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .workspace { display: none; }
+      .side-nav { grid-auto-flow: column; overflow-x: auto; }
+      .side-nav button { white-space: nowrap; }
+      .sidebar__foot { display: none; }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+      .panels { grid-template-columns: 1fr; }
+      .trow { grid-template-columns: 1.3fr .9fr .7fr; }
+      .trow .col-service, .trow .th-service { display: none; }
+    }
+    @media (max-width: 480px) {
+      .kpis { grid-template-columns: 1fr 1fr; }
+      .demo-flag span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN (placeholder, not yet secure) -->
+  <div class="login" id="login">
+    <div class="login__card">
+      <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span>Fielder</a>
+      <h1>Owner login</h1>
+      <p>Sign in to your business hub.</p>
+      <form id="loginForm">
+        <div class="field"><label for="lg-email">Email</label><input id="lg-email" name="email" type="email" placeholder="you@business.com" autocomplete="username" required></div>
+        <div class="field"><label for="lg-pass">Password</label><input id="lg-pass" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required></div>
+        <button class="button button--lime" type="submit">Sign in →</button>
+      </form>
+      <p class="login__note"><strong>Demo preview:</strong> authentication isn't wired yet. Any email + password opens the sample dashboard.</p>
+      <a class="login__back" href="index.html">← Back to fielder.app</a>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div class="app" id="app" hidden>
+    <header class="topbar">
+      <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span>Fielder</a>
+      <div class="topbar__right">
+        <span class="demo-flag">● <span>Demo · sample data</span></span>
+        <div class="avatar" id="avatar">MC</div>
+        <button class="button button--ghost" id="signout">Sign out</button>
+      </div>
+    </header>
+
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="workspace">
+          <div class="avatar" style="width:36px;height:36px">MC</div>
+          <div><small>Workspace</small><strong>Mike Cuts</strong></div>
+        </div>
+        <nav class="side-nav" id="sideNav" aria-label="Dashboard views">
+          <button class="active" data-view="overview"><span class="ic">⌂</span>Overview</button>
+          <button data-view="pipeline"><span class="ic">⇢</span>Pipeline</button>
+          <button data-view="customers"><span class="ic">◎</span>Customers</button>
+          <button data-view="capacity"><span class="ic">◴</span>Capacity</button>
+        </nav>
+        <div class="sidebar__foot">Signed in as<br><span id="whoami">owner@mikecuts.com</span></div>
+      </aside>
+
+      <main class="content">
+
+        <!-- OVERVIEW -->
+        <section class="view active" id="view-overview">
+          <div class="page-head"><div><small>This week</small><h2>Overview</h2></div></div>
+          <div class="kpis">
+            <div class="kpi"><span>New leads</span><strong>12</strong><em class="up">▲ 4 vs last wk</em></div>
+            <div class="kpi"><span>Booked &amp; confirmed</span><strong>8</strong><em class="up">▲ 2</em></div>
+            <div class="kpi"><span>Capacity left</span><strong>7</strong><em>of 42</em></div>
+            <div class="kpi"><span>Ghosted opportunity</span><strong>$640</strong><em class="down">3 leads</em></div>
+          </div>
+          <div class="panels">
+            <div class="panel">
+              <div class="panel__head"><strong>This week's capacity</strong><a data-goto="capacity">Manage →</a></div>
+              <div class="capacity">
+                <div class="ring" style="--deg:300deg"><strong>83%</strong></div>
+                <div class="capacity__copy">
+                  <span>Appointments booked</span>
+                  <strong>35 of 42</strong>
+                  <div class="bar"><i style="width:83%"></i></div>
+                  <span style="display:block;margin-top:8px">7 slots remain · 2 on waitlist</span>
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel__head"><strong>Needs attention</strong><a data-goto="customers">View all →</a></div>
+              <div class="hrow"><div class="person"><i>AJ</i><div><strong>Andre J.</strong><span>Fade · followed up 8 days ago</span></div></div><span class="pill pill--ghost">Ghosted</span></div>
+              <div class="hrow"><div class="person"><i>DR</i><div><strong>Devin R.</strong><span>Lineup · 21 days since visit</span></div></div><span class="pill pill--risk">At risk</span></div>
+              <div class="hrow"><div class="person"><i>NW</i><div><strong>Nia W.</strong><span>Quote sent · no reply 9 days</span></div></div><span class="pill pill--ghost">Ghosted</span></div>
+              <div class="hrow"><div class="person"><i>KL</i><div><strong>Kai L.</strong><span>Regular · 9 visits</span></div></div><span class="pill pill--great">Great</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PIPELINE -->
+        <section class="view" id="view-pipeline">
+          <div class="page-head"><div><small>Lead pipeline</small><h2 id="flowTitle">Appointment flow</h2></div></div>
+          <div class="flow-tabs" id="flowTabs">
+            <button class="flow-tab active" data-flow="appointment">Appointment <b>·</b></button>
+            <button class="flow-tab" data-flow="quote">Quote</button>
+            <button class="flow-tab" data-flow="capacity">Capacity</button>
+            <button class="flow-tab" data-flow="membership">Membership</button>
+          </div>
+          <div class="kanban" id="kanban"></div>
+        </section>
+
+        <!-- CUSTOMERS -->
+        <section class="view" id="view-customers">
+          <div class="page-head"><div><small>Customer health</small><h2>Customers</h2></div></div>
+          <div class="table">
+            <div class="trow trow--head"><span>Customer</span><span>Health</span><span class="th-service">Service</span><span>Visits</span><span>Value</span></div>
+            <div class="trow"><strong>Kai Lewis</strong><span><span class="pill pill--great">Great</span></span><span class="col-service">Fade</span><b>9</b><span>$315</span></div>
+            <div class="trow"><strong>Maya King</strong><span><span class="pill pill--great">Great</span></span><span class="col-service">Cut + color</span><b>6</b><span>$540</span></div>
+            <div class="trow"><strong>Jordan Mills</strong><span><span class="pill pill--active">Active</span></span><span class="col-service">Fade + line-up</span><b>3</b><span>$105</span></div>
+            <div class="trow"><strong>Devin Ross</strong><span><span class="pill pill--risk">At risk</span></span><span class="col-service">Lineup</span><b>2</b><span>$70</span></div>
+            <div class="trow"><strong>Andre Jones</strong><span><span class="pill pill--ghost">Ghosted</span></span><span class="col-service">Beard trim</span><b>0</b><span>$0</span></div>
+            <div class="trow"><strong>Sam Carter</strong><span><span class="pill pill--lost">Lost</span></span><span class="col-service">Fade</span><b>1</b><span>$35</span></div>
+          </div>
+        </section>
+
+        <!-- CAPACITY -->
+        <section class="view" id="view-capacity">
+          <div class="page-head"><div><small>Schedule</small><h2>Capacity</h2></div></div>
+          <div class="panels">
+            <div class="panel">
+              <div class="panel__head"><strong>This week</strong><span style="color:var(--muted);font-size:.72rem">Mon–Sat</span></div>
+              <div class="capacity">
+                <div class="ring" style="--deg:300deg"><strong>83%</strong></div>
+                <div class="capacity__copy">
+                  <span>Appointments booked</span>
+                  <strong>35 of 42</strong>
+                  <div class="bar"><i style="width:83%"></i></div>
+                  <span style="display:block;margin-top:8px">7 open slots remaining</span>
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel__head"><strong>Waitlist</strong><a>Notify →</a></div>
+              <div class="hrow"><div class="person"><i>TB</i><div><strong>Tyler B.</strong><span>Wants Sat afternoon</span></div></div><span class="pill pill--active">Waiting</span></div>
+              <div class="hrow"><div class="person"><i>RP</i><div><strong>Rosa P.</strong><span>Flexible this week</span></div></div><span class="pill pill--active">Waiting</span></div>
+            </div>
+          </div>
+          <div class="panel" style="margin-top:14px">
+            <div class="panel__head"><strong>Weekly utilization</strong></div>
+            <div class="hrow"><span style="font-size:.8rem">Mon</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:90%"></i></div><span style="font-size:.74rem;color:var(--muted)">90%</span></div>
+            <div class="hrow"><span style="font-size:.8rem">Tue</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:70%"></i></div><span style="font-size:.74rem;color:var(--muted)">70%</span></div>
+            <div class="hrow"><span style="font-size:.8rem">Wed</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:85%"></i></div><span style="font-size:.74rem;color:var(--muted)">85%</span></div>
+            <div class="hrow"><span style="font-size:.8rem">Thu</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:60%"></i></div><span style="font-size:.74rem;color:var(--muted)">60%</span></div>
+            <div class="hrow"><span style="font-size:.8rem">Fri</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:100%"></i></div><span style="font-size:.74rem;color:var(--muted)">Full</span></div>
+            <div class="hrow"><span style="font-size:.8rem">Sat</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:95%"></i></div><span style="font-size:.74rem;color:var(--muted)">95%</span></div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // --- Placeholder auth (client-side only; replaced with real auth later) ---
+    const SESSION_KEY = 'fielder_demo_auth';
+    const login = document.getElementById('login');
+    const app = document.getElementById('app');
+
+    function showApp() { login.hidden = true; app.hidden = false; }
+    function showLogin() { app.hidden = true; login.hidden = false; }
+
+    if (sessionStorage.getItem(SESSION_KEY) === '1') showApp();
+
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('lg-email').value.trim();
+      if (email) {
+        document.getElementById('whoami').textContent = email;
+        document.getElementById('avatar').textContent =
+          (email[0] || 'M').toUpperCase() + (email.split('@')[0].slice(-1) || 'C').toUpperCase();
+      }
+      sessionStorage.setItem(SESSION_KEY, '1');
+      showApp();
+    });
+
+    document.getElementById('signout').addEventListener('click', () => {
+      sessionStorage.removeItem(SESSION_KEY);
+      showLogin();
+    });
+
+    // --- View switching ---
+    const navButtons = document.querySelectorAll('#sideNav button');
+    function setView(view) {
+      navButtons.forEach((b) => b.classList.toggle('active', b.dataset.view === view));
+      document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${view}`));
+      window.scrollTo({ top: 0 });
+    }
+    navButtons.forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+    document.querySelectorAll('[data-goto]').forEach((a) => a.addEventListener('click', () => setView(a.dataset.goto)));
+
+    // --- Pipeline flows (the four reusable Fielder flows) ---
+    const flows = {
+      appointment: { title: 'Appointment flow', stages: [
+        { name: 'Lead', cards: [{ n: 'Tasha B.', s: 'Silk press' }, { n: 'Omar J.', s: 'Fade' }, { n: 'Priya S.', s: 'Cut' }] },
+        { name: 'Book', cards: [{ n: 'Maya K.', s: 'Cut + color' }, { n: 'Leon M.', s: 'Fade' }] },
+        { name: 'Confirmed', cards: [{ n: 'Jay C.', s: 'Lineup · Sat 2:00' }] },
+        { name: 'Completed', cards: [{ n: 'Kai L.', s: 'Fade' }, { n: 'Dre P.', s: 'Beard' }] },
+        { name: 'Returning', cards: [{ n: 'Dev K.', s: 'Monthly regular' }] },
+      ]},
+      quote: { title: 'Quote flow', stages: [
+        { name: 'Lead', cards: [{ n: 'Hill Residence', s: 'Driveway wash' }, { n: 'Cardenas', s: 'Patio + deck' }] },
+        { name: 'Review', cards: [{ n: 'Okafor', s: 'House siding' }] },
+        { name: 'Quote sent', cards: [{ n: 'Nia W.', s: '$280 · 9 days' }, { n: 'Tran', s: '$540' }] },
+        { name: 'Accepted', cards: [{ n: 'Bell', s: '$420' }] },
+        { name: 'Scheduled', cards: [{ n: 'Romero', s: 'Thu 9:00' }] },
+        { name: 'Completed', cards: [{ n: 'Aziz', s: '$360 · paid' }] },
+      ]},
+      capacity: { title: 'Capacity flow', stages: [
+        { name: 'Lead', cards: [{ n: 'A. Flores', s: '5 meals/wk' }, { n: 'J. Park', s: '10 meals/wk' }] },
+        { name: 'Reserve slot', cards: [{ n: 'M. Reed', s: 'Wk 24' }] },
+        { name: 'Scheduled', cards: [{ n: 'C. Gray', s: 'Tue delivery' }, { n: 'L. Soto', s: 'Wed delivery' }] },
+        { name: 'Completed', cards: [{ n: 'D. Nash', s: 'Wk 23 · 8 meals' }] },
+        { name: 'Recurring', cards: [{ n: 'P. Adler', s: 'Weekly · 6 mo' }] },
+      ]},
+      membership: { title: 'Membership flow', stages: [
+        { name: 'Lead', cards: [{ n: 'Glen Oaks', s: 'Monthly lawn' }, { n: 'B. Cho', s: 'Coaching' }] },
+        { name: 'Subscribed', cards: [{ n: 'Whitfield', s: '$120/mo' }] },
+        { name: 'Active', cards: [{ n: 'R. Diaz', s: '4 mo' }, { n: 'T. Banks', s: '2 mo' }] },
+        { name: 'Renewal', cards: [{ n: 'S. Pope', s: 'Due in 6 days' }] },
+        { name: 'Retained', cards: [{ n: 'V. Ortiz', s: '14 mo · LTV $1.6k' }] },
+      ]},
+    };
+
+    const kanban = document.getElementById('kanban');
+    function renderFlow(key) {
+      const flow = flows[key];
+      document.getElementById('flowTitle').textContent = flow.title;
+      kanban.innerHTML = flow.stages.map((st) => `
+        <div class="col">
+          <header><span>${st.name}</span><b>${st.cards.length}</b></header>
+          ${st.cards.map((c) => `<div class="kard"><strong>${c.n}</strong><span>${c.s}</span></div>`).join('')}
+        </div>`).join('');
+    }
+    document.getElementById('flowTabs').addEventListener('click', (e) => {
+      const tab = e.target.closest('[data-flow]');
+      if (!tab) return;
+      document.querySelectorAll('#flowTabs .flow-tab').forEach((t) => t.classList.toggle('active', t === tab));
+      renderFlow(tab.dataset.flow);
+    });
+    renderFlow('appointment');
+  </script>
+</body>
+</html>
