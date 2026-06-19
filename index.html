@@ -237,6 +237,31 @@
     .price-box li { padding: 7px 0; color: rgba(255,255,255,.7); font-size: .78rem; }
     .price-box li::before { content: "✓"; margin-right: 8px; color: var(--lime); }
 
+    .contact { background: var(--ink); color: white; }
+    .contact .eyebrow { color: var(--lime); }
+    .contact__grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(40px, 6vw, 74px); align-items: center; }
+    .contact__copy h2 { margin: 14px 0 18px; font-family: var(--display); font-size: clamp(2.6rem, 5vw, 4.4rem); font-weight: 400; line-height: .95; }
+    .contact__copy h2 em { color: var(--lime); }
+    .contact__copy > p { max-width: 440px; color: rgba(255,255,255,.6); }
+    .contact__points { margin: 26px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+    .contact__points li { display: flex; align-items: center; gap: 11px; color: rgba(255,255,255,.78); font-size: .82rem; }
+    .contact__points i { width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 50%; background: rgba(185,237,104,.16); color: var(--lime); font-style: normal; font-size: .7rem; }
+    .form-card { border: 1px solid rgba(255,255,255,.14); border-radius: 20px; padding: clamp(26px, 4vw, 40px); background: var(--white); color: var(--ink); box-shadow: 0 40px 100px rgba(0,0,0,.3); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-field { display: grid; gap: 7px; margin-bottom: 16px; }
+    .form-field label { font-size: .66rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+    .form-field input, .form-field select, .form-field textarea { width: 100%; border: 1px solid var(--line); border-radius: 11px; padding: 13px 14px; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: .9rem; }
+    .form-field textarea { min-height: 104px; resize: vertical; }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus { outline: 2px solid var(--lime-dark); outline-offset: 1px; border-color: transparent; }
+    .form-card .button { width: 100%; margin-top: 4px; }
+    .form-note { margin: 14px 0 0; color: var(--muted); font-size: .68rem; text-align: center; }
+    .form-card.sent form { display: none; }
+    .form-success { display: none; text-align: center; padding: 26px 4px; }
+    .form-success.show { display: block; }
+    .form-success__mark { width: 52px; height: 52px; margin: 0 auto 16px; display: grid; place-items: center; border-radius: 50%; background: #e3f5d0; color: #4c7819; font-size: 1.5rem; font-weight: 800; }
+    .form-success h3 { margin: 0 0 8px; font-family: var(--display); font-size: 2rem; font-weight: 400; }
+    .form-success p { margin: 0 auto; max-width: 320px; color: var(--muted); font-size: .88rem; }
+
     .footer { padding: 60px 0 25px; background: var(--ink); color: white; }
     .footer__top { display: flex; justify-content: space-between; gap: 50px; padding-bottom: 50px; }
     .footer .brand { color: white; }
@@ -251,7 +276,7 @@
     .reveal.visible { opacity: 1; transform: none; }
 
     @media (max-width: 960px) {
-      .hero__grid, .section-head, .pricing-card { grid-template-columns: 1fr; }
+      .hero__grid, .section-head, .pricing-card, .contact__grid { grid-template-columns: 1fr; }
       .hero { min-height: auto; }
       .hero__copy { max-width: 760px; }
       .app-preview { max-width: 680px; transform: none; }
@@ -290,6 +315,7 @@
       .journey-step:nth-last-child(-n+2) { border-bottom: 0; }
       .module-grid { grid-template-columns: 1fr; }
       .flows-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
       .module { min-height: 260px; }
       .business-tabs { grid-template-columns: 1fr 1fr; }
       .capacity-card { grid-template-columns: 1fr; }
@@ -334,7 +360,7 @@
       </div>
       <div class="nav__action">
         <a class="nav__login" href="#preview">Owner login</a>
-        <a class="button button--small button--lime" href="#pricing">Start with Fielder <span aria-hidden="true">↗</span></a>
+        <a class="button button--small button--lime" href="#get-started">Start with Fielder <span aria-hidden="true">↗</span></a>
         <button class="menu-toggle" id="menuToggle" aria-label="Open navigation" aria-expanded="false">☰</button>
       </div>
     </div>
@@ -348,7 +374,7 @@
           <h1>From first lead to <em>loyal customer.</em></h1>
           <p class="hero__lead">Fielder puts your website, intake, booking, leads, customer health, and capacity in one simple flow—so no opportunity gets buried in a DM.</p>
           <div class="hero__actions">
-            <a class="button button--lime" href="#pricing">Get your business in the field <span aria-hidden="true">→</span></a>
+            <a class="button button--lime" href="#get-started">Get your business in the field <span aria-hidden="true">→</span></a>
             <a class="button button--light" href="#preview">See the owner hub</a>
           </div>
           <div class="hero__proof">
@@ -551,7 +577,66 @@
       <div class="wrap">
         <div class="pricing-card reveal">
           <div class="pricing-card__copy"><p class="eyebrow">Simple enough to start now</p><h2>Your front door and your back office—together.</h2><p>One branded system for capturing demand, booking work, seeing capacity, and bringing good customers back.</p></div>
-          <div class="price-box"><small>Fielder business hub</small><div class="price"><sup>$</sup>75<span>/ month maximum</span></div><ul><li>Custom branded client site</li><li>Intake and booking flow</li><li>Owner dashboard and pipeline</li><li>Capacity and customer health</li><li>Email alerts and SMS-ready tools</li></ul><a class="button button--lime" href="mailto:hello@fielder.app?subject=I%20want%20Fielder">Claim your Fielder setup →</a></div>
+          <div class="price-box"><small>Fielder business hub</small><div class="price"><sup>$</sup>75<span>/ month maximum</span></div><ul><li>Custom branded client site</li><li>Intake and booking flow</li><li>Owner dashboard and pipeline</li><li>Capacity and customer health</li><li>Email alerts and SMS-ready tools</li></ul><a class="button button--lime" href="#get-started">Claim your Fielder setup →</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact" id="get-started">
+      <div class="wrap contact__grid reveal">
+        <div class="contact__copy">
+          <p class="eyebrow">Get started</p>
+          <h2>Let's get your business <em>in the field.</em></h2>
+          <p>Tell us about your business and we'll set up your branded site and owner hub—usually live within a day.</p>
+          <ul class="contact__points">
+            <li><i>✓</i> Your own branded <b>name.fielder.app</b> site</li>
+            <li><i>✓</i> Owner dashboard with the flow that fits you</li>
+            <li><i>✓</i> $75/month — launch offer: month 2 free</li>
+          </ul>
+        </div>
+        <div class="form-card" id="contactCard">
+          <form id="contactForm" action="https://formsubmit.co/word.brian1@gmail.com" method="POST">
+            <input type="hidden" name="_subject" value="New Fielder inquiry">
+            <input type="hidden" name="_template" value="table">
+            <input type="hidden" name="_captcha" value="false">
+            <input type="hidden" name="_next" value="https://wordups.github.io/Fielder/?sent=1">
+            <input type="text" name="_honey" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+            <div class="form-grid">
+              <div class="form-field"><label for="cf-name">Your name</label><input id="cf-name" name="name" type="text" required autocomplete="name"></div>
+              <div class="form-field"><label for="cf-business">Business name</label><input id="cf-business" name="business" type="text" autocomplete="organization"></div>
+            </div>
+            <div class="form-grid">
+              <div class="form-field"><label for="cf-email">Email</label><input id="cf-email" name="email" type="email" required autocomplete="email"></div>
+              <div class="form-field"><label for="cf-phone">Phone <span style="text-transform:none;font-weight:600">(optional)</span></label><input id="cf-phone" name="phone" type="tel" autocomplete="tel"></div>
+            </div>
+            <div class="form-field">
+              <label for="cf-type">What kind of business?</label>
+              <select id="cf-type" name="business_type">
+                <option value="">Select one…</option>
+                <option>Barber / salon</option>
+                <option>Trainer / coach</option>
+                <option>Photographer</option>
+                <option>Lawn care</option>
+                <option>Meal prep</option>
+                <option>Cleaning</option>
+                <option>Mobile detailing / car wash</option>
+                <option>Pressure washing</option>
+                <option>Handyman / contractor</option>
+                <option>Other local service</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="cf-message">What do you need help managing?</label>
+              <textarea id="cf-message" name="message" placeholder="e.g. leads from Instagram and texts keep slipping through the cracks…"></textarea>
+            </div>
+            <button class="button button--lime" type="submit">Claim your Fielder setup <span aria-hidden="true">→</span></button>
+            <p class="form-note">No commitment. We'll reply within one business day.</p>
+          </form>
+          <div class="form-success" id="contactSuccess" role="status" aria-live="polite">
+            <div class="form-success__mark">✓</div>
+            <h3>Thanks—you're in.</h3>
+            <p>We got your details and will reach out within one business day.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -559,7 +644,7 @@
 
   <footer class="footer">
     <div class="wrap">
-      <div class="footer__top"><div><a class="brand" href="#top"><span class="brand__mark"></span>Fielder</a><p>The one-stop customer and capacity hub for small service businesses.</p></div><div class="footer__links"><div><strong>Product</strong><a href="#workflow">Workflow</a><a href="#product">Features</a><a href="#capacity">Capacity</a></div><div><strong>Company</strong><a href="mailto:hello@fielder.app">Contact</a><a href="#pricing">Pricing</a><a href="#preview">Owner hub</a></div></div></div>
+      <div class="footer__top"><div><a class="brand" href="#top"><span class="brand__mark"></span>Fielder</a><p>The one-stop customer and capacity hub for small service businesses.</p></div><div class="footer__links"><div><strong>Product</strong><a href="#workflow">Workflow</a><a href="#product">Features</a><a href="#capacity">Capacity</a></div><div><strong>Company</strong><a href="#get-started">Contact</a><a href="#pricing">Pricing</a><a href="#preview">Owner hub</a></div></div></div>
       <div class="footer__bottom"><span>© <span id="year"></span> Fielder. From lead to loyal customer.</span><span>Built for the field—not the spreadsheet.</span></div>
     </div>
   </footer>
@@ -617,6 +702,17 @@
     }), { threshold: .12 });
     document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    if (new URLSearchParams(window.location.search).get('sent') === '1') {
+      const card = document.getElementById('contactCard');
+      const success = document.getElementById('contactSuccess');
+      if (card && success) {
+        card.classList.add('sent');
+        success.classList.add('show');
+        document.getElementById('get-started').scrollIntoView();
+        history.replaceState(null, '', window.location.pathname + window.location.hash);
+      }
+    }
   </script>
 </body>
 </html>
