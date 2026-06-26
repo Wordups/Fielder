@@ -93,6 +93,7 @@
       </div>
     </div>
     <label>Tagline</label><input id="f-tagline">
+    <label>About</label><textarea id="f-about" placeholder="A sentence or two in the business's voice."></textarea>
     <div class="row">
       <div><label>Brand color <span class="swatch" id="sw"></span></label><input id="f-brand" placeholder="#3da35d"></div>
       <div><label>Owner email (receives leads)</label><input id="f-email" placeholder="owner@business.com"></div>
@@ -114,10 +115,32 @@
     </div>
     <div class="status" id="status2"></div>
   </div>
+
+  <div class="card" id="design" hidden>
+    <h2>3. Pick a look</h2>
+    <p class="muted">Claude proposes a few directions from this business's vibe. Pick one — it sets the brand color, tagline, and about.</p>
+    <div class="actions"><button class="btn" id="genDesign">✨ Generate design directions</button></div>
+    <div class="status" id="designStatus"></div>
+    <div id="designGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:14px"></div>
+  </div>
+
+  <div class="card" id="publish" hidden>
+    <h2>4. Publish &amp; go live</h2>
+    <p class="muted">Sign in (or create an owner account) to publish. Your page goes live at <code id="liveSlug">biz.html?slug=…</code> and leads flow into your dashboard.</p>
+    <div class="row">
+      <div><label>Owner email</label><input id="pub-email" type="email" placeholder="you@business.com"></div>
+      <div><label>Password</label><input id="pub-pass" type="password" placeholder="••••••••"></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="publishBtn">Publish my page</button>
+    </div>
+    <div class="status" id="publishStatus"></div>
+  </div>
 </main>
 
 <script>
 const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const backendDefault = "http://localhost:8000";
 $("backend").value = localStorage.getItem("fielder_backend") || backendDefault;
 
@@ -138,6 +161,7 @@ function readForm(){
     industry: $("f-industry").value.trim(),
     flow: $("f-flow").value,
     tagline: $("f-tagline").value.trim() || null,
+    about: $("f-about").value.trim() || null,
     brandColor: $("f-brand").value.trim() || null,
     contact: {
       email: $("f-email").value.trim() || null,
@@ -152,20 +176,91 @@ function fillForm(c){
   c = c || {};
   $("f-name").value=c.businessName||""; $("f-slug").value=c.slug||slugify(c.businessName);
   $("f-industry").value=c.industry||""; $("f-flow").value=c.flow||"appointment";
-  $("f-tagline").value=c.tagline||""; $("f-brand").value=c.brandColor||"";
+  $("f-tagline").value=c.tagline||""; $("f-about").value=c.about||""; $("f-brand").value=c.brandColor||"";
   const ct=c.contact||{}; $("f-email").value=ct.email||""; $("f-ig").value=ct.instagram||""; $("f-loc").value=ct.location||"";
   $("f-services").value=(c.services||[]).map(s=>s.price?`${s.name} | ${s.price}`:s.name).join("\n");
   $("f-portfolio").value=(c.portfolio||[]).join("\n");
-  $("editor").hidden=false; refreshLinks();
+  $("editor").hidden=false; $("design").hidden=false; $("publish").hidden=false; refreshLinks();
 }
 function refreshLinks(){
   const cfg=readForm();
   $("preview").href="biz.html?c="+b64url(cfg);
   $("dash").href="dashboard.html?c="+b64url(cfg);
   $("sw").style.background=cfg.brandColor||"#3da35d";
+  const ls=$("liveSlug"); if(ls) ls.textContent="biz.html?slug="+(cfg.slug||"…");
 }
-["f-name","f-slug","f-industry","f-flow","f-tagline","f-brand","f-email","f-ig","f-loc","f-services","f-portfolio"]
+["f-name","f-slug","f-industry","f-flow","f-tagline","f-about","f-brand","f-email","f-ig","f-loc","f-services","f-portfolio"]
   .forEach(id=>$(id).addEventListener("input",refreshLinks));
+
+// --- Claude design directions (step 3) ---
+let _dirs = [];
+$("genDesign").addEventListener("click", async ()=>{
+  const st=$("designStatus");
+  const backend=($("backend").value||backendDefault).replace(/\/$/,"");
+  const cfg=readForm();
+  if(!cfg.businessName){ st.className="status err"; st.textContent="Add a business name first."; return; }
+  st.className="status"; st.textContent="Asking Claude for directions…";
+  $("genDesign").disabled=true;
+  try{
+    const r=await fetch(backend+"/api/design",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({config:cfg})});
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.detail||("HTTP "+r.status));
+    _dirs=data.directions||[];
+    $("designGrid").innerHTML=_dirs.map((d,i)=>`
+      <button type="button" class="dirCard" data-i="${i}" style="text-align:left;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--white);cursor:pointer">
+        <div style="display:flex;align-items:center;gap:8px"><span class="swatch" style="background:${esc(d.brandColor)}"></span><strong>${esc(d.name)}</strong></div>
+        <p class="muted" style="margin-top:6px">${esc(d.vibe)}</p>
+        <p style="margin-top:8px;font-size:.86rem">“${esc(d.tagline)}”</p>
+      </button>`).join("");
+    st.className="status ok"; st.textContent="Pick a direction below.";
+  }catch(e){
+    st.className="status err"; st.textContent="Couldn't generate: "+e.message+" — is the backend running?";
+  }finally{ $("genDesign").disabled=false; }
+});
+$("designGrid").addEventListener("click",(e)=>{
+  const c=e.target.closest(".dirCard"); if(!c) return;
+  const d=_dirs[+c.dataset.i]; if(!d) return;
+  if(d.brandColor) $("f-brand").value=d.brandColor;
+  if(d.tagline)    $("f-tagline").value=d.tagline;
+  if(d.about)      $("f-about").value=d.about;
+  [...$("designGrid").children].forEach(x=>{ x.style.outline=""; });
+  c.style.outline="2px solid var(--brand)";
+  refreshLinks();
+});
+
+// --- Publish to Supabase (step 4): owner auth → businesses + sites upsert ---
+async function ensureSession(email, password){
+  const { data } = await sbOnb.auth.getSession();
+  if (data.session) return data.session;
+  const inRes = await sbOnb.auth.signInWithPassword({ email, password });
+  if (!inRes.error) return inRes.data.session;
+  const upRes = await sbOnb.auth.signUp({ email, password });
+  if (upRes.error) throw upRes.error;
+  if (!upRes.data.session) throw new Error("Account created — confirm your email, then click Publish again.");
+  return upRes.data.session;
+}
+$("publishBtn").addEventListener("click", async ()=>{
+  const st=$("publishStatus");
+  if(!sbOnb){ st.className="status err"; st.textContent="Add Supabase keys in fielder-config.js to publish."; return; }
+  const cfg=readForm();
+  if(!cfg.businessName || !cfg.slug){ st.className="status err"; st.textContent="Add a business name first."; return; }
+  const email=$("pub-email").value.trim(), password=$("pub-pass").value;
+  if(!email || !password){ st.className="status err"; st.textContent="Enter an owner email and password to publish."; return; }
+  st.className="status"; st.textContent="Publishing…"; $("publishBtn").disabled=true;
+  try{
+    await ensureSession(email, password);
+    const b=await sbOnb.from("businesses").upsert(
+      { slug:cfg.slug, business_name:cfg.businessName, flow:cfg.flow },
+      { onConflict:"slug" });
+    if(b.error) throw new Error(b.error.message + " (is this slug already taken by another account?)");
+    const s=await sbOnb.from("sites").upsert({ slug:cfg.slug, config:cfg }, { onConflict:"slug" });
+    if(s.error) throw s.error;
+    const url="biz.html?slug="+encodeURIComponent(cfg.slug);
+    st.className="status ok"; st.innerHTML='Live! Your page: <a href="'+url+'" target="_blank" rel="noopener"><strong>'+esc(url)+'</strong></a> — leads now flow into your dashboard.';
+  }catch(e){
+    st.className="status err"; st.textContent="Publish failed: "+e.message;
+  }finally{ $("publishBtn").disabled=false; }
+});
 
 // Portfolio uploads → Supabase Storage (public URLs) when configured; else paste URLs.
 const FCFG = window.FIELDER || {};
@@ -192,6 +287,17 @@ $("f-portfolio-files").addEventListener("change", async (e)=>{
 });
 
 $("manual").addEventListener("click",()=>fillForm({flow:"appointment"}));
+
+// Handoff from the index hero flyer-drop: a config was already extracted there.
+(function(){
+  try{
+    const raw=sessionStorage.getItem("fielder_prefill");
+    if(raw){ sessionStorage.removeItem("fielder_prefill"); fillForm(JSON.parse(raw));
+      const st=$("status"); if(st){ st.className="status ok"; st.textContent="Read your flyer — review, pick a look, and publish below."; }
+      window.scrollTo({top:document.getElementById("editor").offsetTop-20,behavior:"smooth"});
+    }
+  }catch(e){}
+})();
 
 $("extract").addEventListener("click",async()=>{
   const st=$("status"); const backend=($("backend").value||backendDefault).replace(/\/$/,"");

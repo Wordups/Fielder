@@ -48,6 +48,8 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="fielder-config.js"></script>
 </head>
 <body>
 <div id="app"><div class="empty wrap">Loading business…</div></div>
@@ -61,6 +63,93 @@ const FLOW = {
 };
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+// Lead intake: AI triage (backend) + persist to the owner's dashboard (Supabase).
+const FCFG = window.FIELDER || {};
+const BACKEND = (FCFG.BACKEND_URL || "").replace(/\/+$/, "");
+const SB = (FCFG.SUPABASE_URL && FCFG.SUPABASE_ANON_KEY && window.supabase)
+  ? window.supabase.createClient(FCFG.SUPABASE_URL, FCFG.SUPABASE_ANON_KEY) : null;
+const INTAKE_ENABLED = !!(BACKEND && SB);
+
+function setStatus(el, msg, isErr){ if(el){ el.textContent = msg; el.style.color = isErr ? "#aa4934" : "var(--brand)"; } }
+
+// Flow-aware intake fields — each flow asks for what the triage agent needs,
+// so it gets structured input instead of guessing from one free-text box.
+function serviceOptions(cfg){
+  const opts = (cfg.services||[]).map(s=>`<option>${esc(s.name)}</option>`).join("");
+  return `<option value="">— choose —</option>${opts}<option>Something else</option>`;
+}
+function flowFields(cfg){
+  const svc = `<div class="field"><label>Service</label><select name="service">${serviceOptions(cfg)}</select></div>`;
+  switch (cfg.flow) {
+    case "quote": return `
+      <div class="field"><label>What do you need?</label><textarea name="message" placeholder="Describe the job — size, surfaces, anything helpful"></textarea></div>
+      <div class="field"><label>Property / area (optional)</label><input name="area" placeholder="e.g. 2-car driveway + back patio"></div>`;
+    case "capacity": return `${svc}
+      <div class="field"><label>How much / how often</label><input name="quantity" placeholder="e.g. 10 meals per week"></div>
+      <div class="field"><label>Start when</label><input name="start" placeholder="e.g. next Monday"></div>`;
+    case "membership": return `${svc}
+      <div class="field"><label>Start date</label><input name="start" placeholder="e.g. June 1"></div>
+      <div class="field"><label>Anything else? (optional)</label><textarea name="message" placeholder="Questions or details"></textarea></div>`;
+    default: return `${svc}
+      <div class="field"><label>Preferred day / time</label><input name="preferred" placeholder="e.g. Saturday morning"></div>
+      <div class="field"><label>Notes (optional)</label><textarea name="message" placeholder="Anything we should know"></textarea></div>`;
+  }
+}
+function composeMessage(form, cfg){
+  const fd = new FormData(form);
+  const get = (k) => (fd.get(k) || "").trim();
+  const parts = [];
+  if (get("service") && get("service") !== "Something else") parts.push(`Service: ${get("service")}`);
+  if (get("preferred")) parts.push(`Preferred time: ${get("preferred")}`);
+  if (get("quantity"))  parts.push(`Quantity/frequency: ${get("quantity")}`);
+  if (get("area"))      parts.push(`Property/area: ${get("area")}`);
+  if (get("start"))     parts.push(`Start: ${get("start")}`);
+  if (get("message"))   parts.push(get("message"));
+  return parts.join(". ") || `${(cfg.services||[])[0]?.name || "service"} request`;
+}
+
+function wireIntake(cfg){
+  const form = document.getElementById("intakeForm");
+  if (!form || !INTAKE_ENABLED) return;  // not configured → native FormSubmit / preview handles it
+  const status = document.getElementById("intakeStatus");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    if ((fd.get("_honey") || "").trim()) return;  // bot trap
+    const lead = {
+      lead_name: (fd.get("name") || "").trim(),
+      lead_contact: (fd.get("contact") || "").trim(),
+      message: composeMessage(form, cfg),
+      channel: "website",
+    };
+    setStatus(status, "Sending…");
+    try {
+      const r = await fetch(`${BACKEND}/api/intake`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ config: cfg, ...lead }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      const triage = await r.json();
+      const { error } = await SB.from("leads").insert({
+        slug: cfg.slug,
+        lead_name: lead.lead_name,
+        lead_contact: lead.lead_contact,
+        channel: lead.channel,
+        message: lead.message,
+        triage,
+        status: "new",
+      });
+      if (error) throw error;
+      form.reset();
+      setStatus(status, `Thanks! ${cfg.businessName} got your request and will follow up.`);
+    } catch (err) {
+      console.error("[Fielder intake]", err);
+      setStatus(status, "Couldn't send just now — please try again or reach out directly.", true);
+    }
+  });
+}
+
 function decodeConfig(c){
   try { return JSON.parse(decodeURIComponent(escape(atob(c.replace(/-/g,"+").replace(/_/g,"/"))))); }
   catch { return null; }
@@ -70,7 +159,13 @@ async function loadConfig(){
   const p = new URLSearchParams(location.search);
   if (p.get("c")) return decodeConfig(p.get("c"));
   if (p.get("slug")) {
-    try { const r = await fetch(`clients/${p.get("slug")}.json`,{cache:"no-store"}); if (r.ok) return r.json(); } catch {}
+    const slug = p.get("slug");
+    // 1) bundled example config (clients/<slug>.json)
+    try { const r = await fetch(`clients/${slug}.json`,{cache:"no-store"}); if (r.ok) return r.json(); } catch {}
+    // 2) a page published to Supabase from onboarding (public read)
+    if (SB) {
+      try { const { data } = await SB.from("sites").select("config").eq("slug", slug).maybeSingle(); if (data && data.config) return data.config; } catch {}
+    }
   }
   return null;
 }
@@ -97,20 +192,24 @@ function render(cfg){
 
   const about = cfg.about ? `<section class="block wrap"><h2>About</h2><p class="sub" style="max-width:640px">${esc(cfg.about)}</p></section>` : "";
 
+  // When BACKEND_URL + Supabase are configured, the form is handled in JS
+  // (AI triage + persist to the owner's dashboard). Otherwise it falls back to
+  // an email-only FormSubmit POST, and if there's no owner email, to preview.
   const formAction = c.email ? `https://formsubmit.co/${esc(c.email)}` : "";
+  const useFormSubmit = !INTAKE_ENABLED && !!formAction;
   const intake = `
     <section class="block contact"><div class="wrap">
       <h2>${flow.cta}</h2>
       <p class="sub">Send your details and ${esc(cfg.businessName)} will follow up.</p>
-      <form ${formAction?`action="${formAction}" method="POST"`:""} onsubmit="${formAction?"":"event.preventDefault();alert('Demo: owner email not set, so this is preview-only.');"}">
+      <form id="intakeForm" ${useFormSubmit?`action="${formAction}" method="POST"`:""}>
         <input type="hidden" name="_subject" value="New ${esc(flow.verb)} request — ${esc(cfg.businessName)}">
         <input type="hidden" name="_captcha" value="false">
         <input type="text" name="_honey" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
         <div class="field"><label>Your name</label><input name="name" required></div>
         <div class="field"><label>Email or phone</label><input name="contact" required></div>
-        <div class="field"><label>What do you need?</label><textarea name="message" placeholder="e.g. ${esc((cfg.services||[])[0]?.name || 'service')} — preferred day/time"></textarea></div>
+        ${flowFields(cfg)}
         <button class="btn" type="submit">${flow.cta} →</button>
-        ${formAction?"":`<p class="note">Owner email wasn't detected, so submissions are disabled in this preview.</p>`}
+        <p class="note" id="intakeStatus" role="status" aria-live="polite">${(!INTAKE_ENABLED && !formAction)?"Owner email wasn't detected, so submissions are disabled in this preview.":""}</p>
       </form>
     </div></section>`;
 
@@ -125,6 +224,8 @@ function render(cfg){
     ${services}${gallery}${about}
     <a id="go"></a>${intake}
     <footer><div class="wrap"><span class="powered"><span class="dot"></span>Built on Fielder</span></div></footer>`;
+
+  wireIntake(cfg);
 }
 
 loadConfig().then(render);

@@ -15,6 +15,7 @@ Run:  uvicorn app:app --reload --port 8000   (from this backend/ dir)
 from __future__ import annotations
 
 import base64
+import json
 import os
 import re
 from typing import Literal, Optional
@@ -52,6 +53,85 @@ class BusinessConfig(BaseModel):
     contact: Contact = Field(default_factory=Contact)
     services: list[Service] = Field(default_factory=list)
     portfolio: list[str] = Field(default_factory=list)
+
+
+# ── The intake contract: one inbound lead → classification + routing + draft reply ──
+class IntakeResult(BaseModel):
+    is_real_lead: bool
+    is_spam: bool
+    intent: str
+    service_interest: Optional[str] = None
+    urgency: Literal["high", "medium", "low"] = "medium"
+    next_action: Literal[
+        "book", "send_quote", "reserve_slot", "subscribe",
+        "join_waitlist", "clarify", "decline_spam",
+    ]
+    draft_reply: str
+    needs_owner_attention: bool = False
+    summary: str
+
+
+class IntakeRequest(BaseModel):
+    config: BusinessConfig          # the business the lead came in for (drives the flow)
+    message: str                    # the lead's free-text submission / DM / text
+    lead_name: Optional[str] = None
+    lead_contact: Optional[str] = None
+    channel: Optional[str] = None   # instagram / google / facebook / text / referral / website
+
+
+INTAKE_INSTRUCTIONS = """You are the intake agent for a small local service business on Fielder \
+(a website-plus-dashboard hub for service providers). You receive ONE inbound lead — a website form \
+submission, an Instagram/Facebook DM, a text, or a referral note — together with the business's \
+profile and its Fielder flow. Classify the lead, route it to the next step in that flow, and draft a \
+short reply the OWNER will review before anything is sent. You never send messages yourself.
+
+Rules:
+- is_spam: true for bots, sales pitches aimed at the owner, gibberish, or off-topic messages. \
+If spam, set is_real_lead false and next_action "decline_spam".
+- service_interest: match to one of the business's listed services if the lead names or implies one; otherwise null.
+- urgency: high if they want something today/ASAP or name an event date soon; low for vague "just looking"; else medium.
+- next_action: pick the step that fits the business's flow:
+    appointment -> "book"        (or "clarify" if they haven't said what service or when)
+    quote       -> "send_quote"  (or "clarify" if you can't estimate without more info)
+    capacity    -> "reserve_slot" (or "join_waitlist" if they imply a full/known-busy period)
+    membership  -> "subscribe"   (or "clarify")
+  Use "clarify" whenever key info is missing. Never invent prices, availability, or dates.
+- draft_reply: 1-3 sentences, warm and on-brand, written as the owner texting the lead back, moving them \
+toward next_action. Don't promise specific times or prices you don't have — ask for them instead. Keep it SMS-length.
+- needs_owner_attention: true for complaints, refunds, unusually large/complex jobs, or anything you're unsure how to handle.
+- summary: one short line for the owner's dashboard (who + what they want)."""
+
+
+# ── Design directions: a draft config in → a few distinct visual directions out ──
+class DesignDirection(BaseModel):
+    name: str            # short label for the look, e.g. "Bold & modern"
+    vibe: str            # one line describing the aesthetic
+    brandColor: str      # hex, e.g. "#c2410c"
+    tagline: str
+    about: str           # 1-2 sentences
+
+
+class DesignDirections(BaseModel):
+    directions: list[DesignDirection]
+
+
+class DesignRequest(BaseModel):
+    config: BusinessConfig
+
+
+DESIGN_INSTRUCTIONS = """You are the brand designer for a small local service business being set up on \
+Fielder. Given the business profile, propose exactly THREE genuinely distinct visual directions the owner \
+can choose from for their public page.
+
+Rules:
+- Make the three directions clearly different from each other in mood and palette (e.g. one bold/modern, \
+one warm/classic, one clean/minimal) — do NOT return three variations of the same look, and do not default \
+to generic green.
+- brandColor: a hex color that anchors each direction and genuinely fits this industry and vibe. Pick colors \
+a real brand in this trade would use; avoid the same hue across directions.
+- tagline: short and specific to THIS business (use its name/services), not a generic slogan.
+- about: 1-2 warm sentences in the business's voice.
+- name + vibe: keep them short so the owner can skim and pick."""
 
 
 EXTRACT_INSTRUCTIONS = """You are onboarding a small local service business onto Fielder \
@@ -138,3 +218,66 @@ async def extract(
     # Normalize the slug defensively (the model is good, but enforce the contract).
     config.slug = re.sub(r"[^a-z0-9]+", "-", (config.slug or config.businessName).lower()).strip("-")
     return config.model_dump()
+
+
+@app.post("/api/intake")
+async def intake(req: IntakeRequest) -> dict:
+    """One inbound lead + business config in -> a routed, drafted IntakeResult out.
+
+    Stateless triage: classify -> route to the business's flow -> draft a reply.
+    The draft is returned for OWNER REVIEW; nothing is sent here. Persistence
+    (a leads table) and the dashboard approval queue are the next steps.
+    """
+    message = (req.message or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Provide the lead's message to triage.")
+
+    prompt = (
+        INTAKE_INSTRUCTIONS
+        + "\n\nBusiness profile (JSON):\n"
+        + json.dumps(req.config.model_dump(), ensure_ascii=False)
+        + "\n\nInbound lead:"
+        + f"\n- channel: {req.channel or 'unknown'}"
+        + f"\n- name: {req.lead_name or 'unknown'}"
+        + f"\n- contact: {req.lead_contact or 'unknown'}"
+        + f"\n- message: {message}"
+    )
+
+    try:
+        response = client.messages.parse(
+            model=MODEL,
+            max_tokens=1500,
+            messages=[{"role": "user", "content": prompt}],
+            output_format=IntakeResult,
+        )
+    except anthropic.APIError as exc:  # surfaces auth/rate/overload cleanly
+        raise HTTPException(status_code=502, detail=f"Intake triage failed: {exc}") from exc
+
+    result = response.parsed_output
+    if result is None:
+        raise HTTPException(status_code=502, detail="Could not triage that lead.")
+    return result.model_dump()
+
+
+@app.post("/api/design")
+async def design(req: DesignRequest) -> dict:
+    """A draft BusinessConfig in -> three distinct visual directions to choose from."""
+    prompt = (
+        DESIGN_INSTRUCTIONS
+        + "\n\nBusiness profile (JSON):\n"
+        + json.dumps(req.config.model_dump(), ensure_ascii=False)
+    )
+    try:
+        response = client.messages.parse(
+            model=MODEL,
+            max_tokens=1500,
+            messages=[{"role": "user", "content": prompt}],
+            output_format=DesignDirections,
+        )
+    except anthropic.APIError as exc:  # surfaces auth/rate/overload cleanly
+        raise HTTPException(status_code=502, detail=f"Design generation failed: {exc}") from exc
+
+    result = response.parsed_output
+    if result is None:
+        raise HTTPException(status_code=502, detail="Could not generate design directions.")
+    return result.model_dump()

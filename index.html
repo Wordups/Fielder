@@ -344,6 +344,7 @@
       .reveal { opacity: 1; transform: none; }
     }
   </style>
+  <script src="fielder-config.js"></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -371,17 +372,17 @@
       <div class="wrap hero__grid">
         <div class="hero__copy">
           <p class="eyebrow">The operating hub for service businesses</p>
-          <h1>From first lead to <em>loyal customer.</em></h1>
-          <p class="hero__lead">Fielder puts your website, intake, booking, leads, customer health, and capacity in one simple flow—so no opportunity gets buried in a DM.</p>
+          <h1>From a flyer to a <em>working business.</em></h1>
+          <p class="hero__lead">Already made a flyer or an Instagram post for your business? Drop it in—Fielder reads it and builds your branded page, booking flow, and owner dashboard in minutes.</p>
           <div class="hero__actions">
-            <a class="button button--lime" href="#get-started">Get your business in the field <span aria-hidden="true">→</span></a>
+            <button class="button button--lime" id="heroFlyerBtn" type="button">Drop your flyer — build my page <span aria-hidden="true">→</span></button>
             <a class="button button--light" href="#preview">See the owner hub</a>
           </div>
-          <div class="hero__proof">
-            <span><i>✓</i> Branded client site</span>
-            <span><i>✓</i> Lead-to-booking workflow</span>
-            <span><i>✓</i> Built for local service</span>
-          </div>
+          <input type="file" id="heroFlyer" accept="image/*" hidden>
+          <p class="hero__proof" id="heroFlyerStatus" aria-live="polite" style="display:block">
+            <span><i>✓</i> Reads your flyer with AI · live in ~3 min ·
+            <a href="biz.html?slug=mikecuts" style="color:var(--lime)">no flyer? try a sample →</a></span>
+          </p>
         </div>
 
         <div class="app-preview" id="preview">
@@ -713,6 +714,48 @@
         history.replaceState(null, '', window.location.pathname + window.location.hash);
       }
     }
+
+    // --- Hero flyer-drop: poster/IG image → /api/extract → live preview ---
+    (function () {
+      const btn = document.getElementById('heroFlyerBtn');
+      const input = document.getElementById('heroFlyer');
+      const status = document.getElementById('heroFlyerStatus');
+      if (!btn || !input) return;
+      const FCFG = window.FIELDER || {};
+      const BACKEND = (FCFG.BACKEND_URL || '').replace(/\/+$/, '');
+      const b64url = (obj) =>
+        btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      const say = (html) => { if (status) status.innerHTML = '<span>' + html + '</span>'; };
+
+      btn.addEventListener('click', () => {
+        // No backend configured → send them to the full onboarding flow.
+        if (!BACKEND) { window.location.href = 'onboarding.html'; return; }
+        input.click();
+      });
+
+      input.addEventListener('change', async () => {
+        const file = input.files[0];
+        if (!file) return;
+        say('Reading your flyer with AI…');
+        btn.disabled = true;
+        try {
+          const fd = new FormData();
+          fd.append('image', file);
+          const r = await fetch(BACKEND + '/api/extract', { method: 'POST', body: fd });
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.detail || ('HTTP ' + r.status));
+          say('Done! Opening your page…');
+          // Hand off to onboarding to review/design/publish, carrying the config.
+          sessionStorage.setItem('fielder_prefill', JSON.stringify(data));
+          window.location.href = 'onboarding.html#built';
+        } catch (e) {
+          say('Couldn\'t read that one — <a href="onboarding.html" style="color:var(--lime)">try the full onboarding →</a>');
+          console.error('[Fielder hero]', e);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    })();
   </script>
 </body>
 </html>

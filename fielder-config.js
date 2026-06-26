@@ -11,8 +11,12 @@
 //
 // Setup: create a project at supabase.com → Settings → API for the URL + anon
 // key; enable Email auth; create a PUBLIC Storage bucket named "portfolios".
+//   • lead intake (biz.html → AI triage) when BACKEND_URL points at the running
+//     `backend/` service (the FastAPI app with your ANTHROPIC_API_KEY). Leave it
+//     blank and biz.html falls back to the email-only contact form.
 window.FIELDER = {
   SUPABASE_URL: "",
   SUPABASE_ANON_KEY: "",
   STORAGE_BUCKET: "portfolios",
+  BACKEND_URL: "",          // e.g. "http://localhost:8000" or your deployed extractor URL
 };

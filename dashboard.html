@@ -127,6 +127,22 @@
     .trow--head { background: var(--paper); color: var(--muted); font-size: .62rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
     .trow strong { font-size: .84rem; }
 
+    /* Leads queue */
+    .leadsBadge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-left: auto; padding: 0 5px; border-radius: 99px; background: var(--coral); color: #fff; font-size: .6rem; font-weight: 800; }
+    .leads-banner { margin-bottom: 16px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: #fff4d6; color: #7a5a09; font-size: .78rem; }
+    .leads-banner a { font-weight: 800; }
+    .leads-list { display: grid; gap: 14px; max-width: 720px; }
+    .lead { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: var(--white); }
+    .lead__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .lead__msg { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: var(--paper); font-size: .85rem; }
+    .lead__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .tag { border: 1px solid var(--line); border-radius: 99px; padding: 3px 9px; font-size: .62rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: #54635c; background: var(--paper); }
+    .tag.attn { background: #ffe8e3; color: #aa4934; border-color: transparent; }
+    .lead__summary { margin: 0 0 12px; color: var(--muted); font-size: .8rem; }
+    .lead label { display: block; font-size: .62rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .lead__draft { width: 100%; min-height: 74px; resize: vertical; border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; background: var(--paper); font: inherit; font-size: .86rem; }
+    .lead__actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+
     @media (max-width: 860px) {
       .shell { grid-template-columns: 1fr; }
       .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
@@ -183,7 +199,8 @@
           <div><small>Workspace</small><strong id="wsName">Mike Cuts</strong></div>
         </div>
         <nav class="side-nav" id="sideNav" aria-label="Dashboard views">
-          <button class="active" data-view="overview"><span class="ic">⌂</span>Overview</button>
+          <button class="active" data-view="leads"><span class="ic">✉</span>Leads<span class="leadsBadge" id="leadsBadge" hidden>0</span></button>
+          <button data-view="overview"><span class="ic">⌂</span>Overview</button>
           <button data-view="pipeline"><span class="ic">⇢</span>Pipeline</button>
           <button data-view="customers"><span class="ic">◎</span>Customers</button>
           <button data-view="capacity"><span class="ic">◴</span>Capacity</button>
@@ -193,8 +210,17 @@
 
       <main class="content">
 
+        <!-- LEADS (intake approval queue) -->
+        <section class="view active" id="view-leads">
+          <div class="page-head"><div><small>Intake</small><h2>Leads to review</h2></div></div>
+          <div class="leads-banner" id="leadsBanner" hidden></div>
+          <div class="leads-list" id="leadsList">
+            <p style="color:var(--muted)">Loading leads…</p>
+          </div>
+        </section>
+
         <!-- OVERVIEW -->
-        <section class="view active" id="view-overview">
+        <section class="view" id="view-overview">
           <div class="page-head"><div><small>This week</small><h2>Overview</h2></div></div>
           <div class="kpis">
             <div class="kpi"><span>New leads</span><strong>12</strong><em class="up">▲ 4 vs last wk</em></div>
@@ -424,6 +450,139 @@
         document.querySelectorAll('#flowTabs .flow-tab').forEach((t) => t.classList.toggle('active', t.dataset.flow === flow));
       }
       renderFlow(flow);
+    })();
+
+    // --- Leads approval queue (the intake loop's review stage) ---
+    (function () {
+      const listEl = document.getElementById('leadsList');
+      const bannerEl = document.getElementById('leadsBanner');
+      const badgeEl = document.getElementById('leadsBadge');
+      const URG = { high: 'pill--ghost', medium: 'pill--risk', low: 'pill--active' };
+      const escd = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+      function getCfg() {
+        const p = new URLSearchParams(location.search);
+        if (!p.get('c')) return null;
+        try { return JSON.parse(decodeURIComponent(escape(atob(p.get('c').replace(/-/g, '+').replace(/_/g, '/'))))); }
+        catch { return null; }
+      }
+      function banner(html) { if (!bannerEl) return; bannerEl.innerHTML = html || ''; bannerEl.hidden = !html; }
+      function badge(n) { if (!badgeEl) return; badgeEl.textContent = n; badgeEl.hidden = !n; }
+
+      function cardHTML(lead) {
+        const t = lead.triage || {};
+        const init = (lead.lead_name || '?').trim().slice(0, 2).toUpperCase() || 'IN';
+        const urg = URG[t.urgency] || 'pill--active';
+        const tags = [
+          t.next_action ? `<span class="tag">${escd(String(t.next_action).replace(/_/g, ' '))}</span>` : '',
+          t.service_interest ? `<span class="tag">${escd(t.service_interest)}</span>` : '',
+          lead.channel ? `<span class="tag">${escd(lead.channel)}</span>` : '',
+          t.is_spam ? `<span class="tag attn">likely spam</span>` : '',
+          t.needs_owner_attention ? `<span class="tag attn">needs you</span>` : '',
+        ].filter(Boolean).join('');
+        return `<div class="lead" data-id="${escd(lead.id)}">
+          <div class="lead__top">
+            <div class="person"><i>${escd(init)}</i><div>
+              <strong>${escd(lead.lead_name || 'Unknown')}</strong>
+              <span>${escd(lead.lead_contact || 'no contact')}</span>
+            </div></div>
+            <span class="pill ${urg}">${escd(t.urgency || 'new')}</span>
+          </div>
+          <p class="lead__msg">“${escd(lead.message)}”</p>
+          <div class="lead__tags">${tags}</div>
+          ${t.summary ? `<p class="lead__summary">${escd(t.summary)}</p>` : ''}
+          <label>Draft reply — edit, then approve to copy it</label>
+          <textarea class="lead__draft">${escd(t.draft_reply || '')}</textarea>
+          <div class="lead__actions">
+            <button class="button button--lime" data-act="approve">Approve &amp; copy reply</button>
+            <button class="button button--ghost" data-act="dismiss">Dismiss</button>
+          </div>
+        </div>`;
+      }
+
+      function renderDemo() {
+        banner('<strong>Demo mode.</strong> Connect Supabase + the backend (fielder-config.js) to receive real, AI-triaged leads here.');
+        const demo = [
+          { id: 'demo1', lead_name: 'Tasha B.', lead_contact: 'tasha@email.com', channel: 'instagram', message: 'Hey! Do you have anything Saturday for a silk press?', triage: { urgency: 'high', next_action: 'book', service_interest: 'Silk press', summary: 'Tasha wants a silk press, asking about Saturday availability.', draft_reply: 'Hi Tasha! I’d love to get you in Saturday — I have a couple of slots open. What time works best for you?' } },
+          { id: 'demo2', lead_name: 'Marcus', lead_contact: '555-0142', channel: 'website', message: 'whats your pricing', triage: { urgency: 'low', next_action: 'clarify', summary: 'Marcus is asking about pricing, no service specified.', needs_owner_attention: false, draft_reply: 'Hey Marcus! Happy to help — what service are you interested in? My fades start at $35 and I can give you an exact quote from there.' } },
+        ];
+        listEl.innerHTML = demo.map(cardHTML).join('');
+        badge(demo.length);
+      }
+
+      async function ownedSlugs() {
+        const { data } = await sb.from('businesses').select('slug');
+        return (data || []).map((r) => r.slug);
+      }
+      async function autoClaim(cfg) {
+        if (!cfg || !cfg.slug || !cfg.businessName) return;
+        // owner_id defaults to auth.uid() server-side; ignore if the slug is already claimed.
+        await sb.from('businesses').upsert(
+          { slug: cfg.slug, business_name: cfg.businessName, flow: cfg.flow },
+          { onConflict: 'slug', ignoreDuplicates: true },
+        );
+      }
+      async function loadLeads() {
+        if (!sb) { renderDemo(); return; }
+        const cfg = getCfg();
+        try { await autoClaim(cfg); } catch (e) { /* slug owned by someone else — fine */ }
+        let slugs = await ownedSlugs();
+        if (cfg && cfg.slug && !slugs.includes(cfg.slug)) slugs.push(cfg.slug);
+        if (!slugs.length) {
+          banner('No business is linked to this account yet. Open your business page via onboarding (it carries <code>?c=…</code>) to claim it, then your leads land here.');
+          listEl.innerHTML = '<p style="color:var(--muted)">No linked business.</p>';
+          badge(0);
+          return;
+        }
+        const { data, error } = await sb
+          .from('leads').select('*')
+          .in('slug', slugs).eq('status', 'new')
+          .order('created_at', { ascending: false });
+        if (error) {
+          banner('Could not load leads: ' + escd(error.message) + ' — make sure you ran supabase_schema.sql.');
+          listEl.innerHTML = '';
+          return;
+        }
+        banner('');
+        badge((data || []).length);
+        listEl.innerHTML = (data || []).length
+          ? data.map(cardHTML).join('')
+          : '<p style="color:var(--muted)">No new leads right now. New submissions from your business page show up here for review.</p>';
+      }
+
+      // Approve / dismiss (event delegation)
+      listEl.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-act]');
+        if (!btn) return;
+        const card = btn.closest('.lead');
+        const id = card?.dataset.id;
+        const act = btn.dataset.act;
+        if (act === 'approve') {
+          const draft = card.querySelector('.lead__draft').value;
+          try { await navigator.clipboard.writeText(draft); } catch {}
+          btn.textContent = 'Copied ✓';
+          if (sb && !String(id).startsWith('demo')) {
+            const { error } = await sb.from('leads').update({ status: 'approved' }).eq('id', id);
+            if (error) { btn.textContent = 'Error'; return; }
+          }
+          setTimeout(() => { card.remove(); badge(listEl.querySelectorAll('.lead').length); }, 450);
+        } else if (act === 'dismiss') {
+          if (sb && !String(id).startsWith('demo')) {
+            const { error } = await sb.from('leads').update({ status: 'dismissed' }).eq('id', id);
+            if (error) return;
+          }
+          card.remove();
+          badge(listEl.querySelectorAll('.lead').length);
+        }
+      });
+
+      // Load on auth (a second, non-disruptive listener alongside the auth UI logic above)
+      if (sb) {
+        sb.auth.getSession().then(({ data }) => { if (data.session) loadLeads(); });
+        sb.auth.onAuthStateChange((_evt, session) => { if (session) loadLeads(); });
+      } else {
+        renderDemo();
+      }
     })();
   </script>
 </body>
