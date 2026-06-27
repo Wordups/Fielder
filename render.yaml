@@ -1,0 +1,17 @@
+# One-click backend deploy on Render.
+# render.com → New → Blueprint → pick this repo. Then set ANTHROPIC_API_KEY
+# (marked secret below) in the dashboard. The backend serves /api/extract,
+# /api/intake, /api/design, and /api/health.
+services:
+  - type: web
+    name: fielder-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false                         # set in the Render dashboard (kept secret)
+      - key: FIELDER_ALLOWED_ORIGINS
+        value: https://wordups.github.io    # lock CORS to your Pages origin

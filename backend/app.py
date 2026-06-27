@@ -154,9 +154,14 @@ Rules:
 
 
 app = FastAPI(title="Fielder Onboarding Extractor", version="0.1.0")
+
+# CORS: defaults open for local dev. In production set FIELDER_ALLOWED_ORIGINS to
+# your Pages origin(s), comma-separated — e.g. "https://wordups.github.io".
+_origins = os.environ.get("FIELDER_ALLOWED_ORIGINS", "*").strip()
+ALLOW_ORIGINS = ["*"] if _origins == "*" else [o.strip() for o in _origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # demo-open; tighten to your Pages origin in production
+    allow_origins=ALLOW_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )

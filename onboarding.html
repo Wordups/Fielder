@@ -256,7 +256,7 @@ $("publishBtn").addEventListener("click", async ()=>{
     const s=await sbOnb.from("sites").upsert({ slug:cfg.slug, config:cfg }, { onConflict:"slug" });
     if(s.error) throw s.error;
     const url="biz.html?slug="+encodeURIComponent(cfg.slug);
-    st.className="status ok"; st.innerHTML='Live! Your page: <a href="'+url+'" target="_blank" rel="noopener"><strong>'+esc(url)+'</strong></a> — leads now flow into your dashboard.';
+    st.className="status ok"; st.innerHTML='✓ Your site is fully live and accessible: <a href="'+url+'" target="_blank" rel="noopener"><strong>'+esc(url)+'</strong></a><br>Share it in your bio and texts — every lead now lands in your dashboard.';
   }catch(e){
     st.className="status err"; st.textContent="Publish failed: "+e.message;
   }finally{ $("publishBtn").disabled=false; }

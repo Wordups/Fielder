@@ -172,7 +172,17 @@ async function loadConfig(){
 
 function render(cfg){
   const app = document.getElementById("app");
-  if (!cfg || !cfg.businessName){ app.innerHTML = `<div class="empty wrap">No business config. Open this page from onboarding, or add <code>?slug=name</code>.</div>`; return; }
+  if (!cfg || !cfg.businessName){
+    const hadSlug = new URLSearchParams(location.search).get("slug");
+    app.innerHTML = hadSlug
+      ? `<div class="empty wrap">
+           <h2 style="font-family:var(--display);font-weight:400;font-size:2rem;margin-bottom:8px">Coming soon</h2>
+           <p>This business is setting up on Fielder — check back shortly.</p>
+           <p style="margin-top:16px"><span class="powered"><span class="dot"></span>Built on Fielder</span></p>
+         </div>`
+      : `<div class="empty wrap">No business config. Open this page from onboarding, or add <code>?slug=name</code>.</div>`;
+    return;
+  }
   if (cfg.brandColor) document.documentElement.style.setProperty("--brand", cfg.brandColor);
   document.title = cfg.businessName + " — Fielder";
 
