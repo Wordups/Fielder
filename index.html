@@ -343,6 +343,12 @@
       *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
       .reveal { opacity: 1; transform: none; }
     }
+    @media (max-width: 480px) {
+      .hero h1 { font-size: clamp(2.8rem, 11vw, 4.2rem); }
+      .hero__actions .button { width: 100%; }
+      #heroFlyerBtn { white-space: normal; padding: 14px 16px; }
+      .form-field input, .form-field select { min-height: 44px; }
+    }
   </style>
   <script src="fielder-config.js"></script>
 </head>

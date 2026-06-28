@@ -143,6 +143,16 @@
     .lead__draft { width: 100%; min-height: 74px; resize: vertical; border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; background: var(--paper); font: inherit; font-size: .86rem; }
     .lead__actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 
+    /* First-login coach-marks */
+    .cm-backdrop { position: fixed; inset: 0; background: rgba(16,37,31,.45); z-index: 2000; }
+    .cm-ring { position: fixed; z-index: 2001; border: 2px solid var(--lime); border-radius: 10px; box-shadow: 0 0 0 4px rgba(185,237,104,.35); pointer-events: none; transition: all .2s ease; }
+    .cm-bubble { position: fixed; z-index: 2002; width: min(320px, calc(100vw - 24px)); background: var(--white); color: var(--ink); border-radius: 14px; padding: 16px; box-shadow: 0 24px 70px rgba(0,0,0,.35); }
+    .cm-bubble p { margin: 0 0 12px; font-size: .88rem; line-height: 1.45; }
+    .cm-bubble__row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .cm-bubble__row .cm-steps { color: var(--muted); font-size: .7rem; }
+    .cm-bubble .button { min-height: 36px; padding: 8px 14px; font-size: .78rem; }
+    .cm-skip { background: none; border: 0; color: var(--muted); font-size: .74rem; cursor: pointer; padding: 4px; }
+
     @media (max-width: 860px) {
       .shell { grid-template-columns: 1fr; }
       .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
@@ -158,6 +168,15 @@
     @media (max-width: 480px) {
       .kpis { grid-template-columns: 1fr 1fr; }
       .demo-flag span { display: none; }
+      .topbar { min-height: 56px; padding: 0 12px; gap: 8px; }
+      .topbar__right { gap: 8px; }
+      .button { padding: 9px 13px; font-size: .76rem; }
+      .nb-label { display: none; }                 /* + New business collapses to "+" */
+      .lead__actions { flex-direction: column; }
+      .lead__actions .button { width: 100%; }
+      .lead__draft { min-height: 60px; }
+      .login__card h1 { font-size: 1.6rem; }
+      .login__card { padding: 22px; }
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -187,6 +206,7 @@
       <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span>Fielder</a>
       <div class="topbar__right">
         <span class="demo-flag" hidden>● <span>Demo · sample data</span></span>
+        <a class="button button--lime" id="newBiz" href="onboarding.html">+&nbsp;<span class="nb-label">New business</span></a>
         <div class="avatar" id="avatar">MC</div>
         <button class="button button--ghost" id="signout">Sign out</button>
       </div>
@@ -601,12 +621,87 @@
       });
 
       // Load on auth (a second, non-disruptive listener alongside the auth UI logic above)
+      const afterLoad = () => { if (window.__fielderStartTour) window.__fielderStartTour(); };
       if (sb) {
-        sb.auth.getSession().then(({ data }) => { if (data.session) loadLeads(); });
-        sb.auth.onAuthStateChange((_evt, session) => { if (session) loadLeads(); });
+        sb.auth.getSession().then(({ data }) => { if (data.session) loadLeads().then(afterLoad); });
+        sb.auth.onAuthStateChange((_evt, session) => { if (session) loadLeads().then(afterLoad); });
       } else {
         renderDemo();
       }
+    })();
+
+    // --- First-login coach-marks (anchored walkthrough, first 3 logins) ---
+    (function () {
+      if (!sb) return;  // only with real auth
+      let started = false;
+      const STEPS = [
+        { sel: '[data-view="leads"]', text: 'This is your lead queue — every inquiry lands here, already triaged by AI.' },
+        { sel: '.lead .lead__actions', alt: '#leadsList', text: 'Edit the AI draft, then Approve to copy the reply — or Dismiss.' },
+        { sel: '#newBiz', text: 'Add another business anytime — drop a flyer and Fielder builds the page.' },
+      ];
+      async function startTourIfNeeded() {
+        if (started) return;
+        const { data } = await sb.auth.getSession();
+        const uid = data && data.session && data.session.user && data.session.user.id;
+        if (!uid) return;
+        const key = 'fielder_tour_' + uid;
+        const raw = localStorage.getItem(key);
+        if (raw === 'done') return;
+        const n = parseInt(raw || '0', 10) || 0;
+        if (n >= 3) { localStorage.setItem(key, 'done'); return; }
+        started = true;
+        localStorage.setItem(key, String(n + 1));   // this login counts toward the first 3
+        runTour(key);
+      }
+      function runTour(key) {
+        let i = 0;
+        const backdrop = document.createElement('div'); backdrop.className = 'cm-backdrop';
+        const ring = document.createElement('div'); ring.className = 'cm-ring';
+        const bubble = document.createElement('div'); bubble.className = 'cm-bubble';
+        document.body.append(backdrop, ring, bubble);
+        const cleanup = () => [backdrop, ring, bubble].forEach((e) => e.remove());
+        const done = () => { localStorage.setItem(key, 'done'); cleanup(); };
+        function place() {
+          const step = STEPS[i];
+          const t = document.querySelector(step.sel) || (step.alt && document.querySelector(step.alt));
+          if (!t) {  // no anchor for this step → skip it
+            if (i < STEPS.length - 1) { i++; return place(); }
+            return cleanup();
+          }
+          t.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          setTimeout(() => {
+            const r = t.getBoundingClientRect();
+            ring.style.left = (r.left - 4) + 'px'; ring.style.top = (r.top - 4) + 'px';
+            ring.style.width = (r.width + 8) + 'px'; ring.style.height = (r.height + 8) + 'px';
+            const bw = Math.min(320, window.innerWidth - 24);
+            bubble.style.width = bw + 'px';
+            bubble.style.left = Math.min(Math.max(8, r.left), window.innerWidth - bw - 8) + 'px';
+            bubble.innerHTML =
+              '<p>' + STEPS[i].text + '</p>' +
+              '<div class="cm-bubble__row">' +
+                '<button class="cm-skip" data-cm="skip">Skip</button>' +
+                '<span style="display:flex;gap:8px;align-items:center">' +
+                  '<span class="cm-steps">' + (i + 1) + '/' + STEPS.length + '</span>' +
+                  (i > 0 ? '<button class="button button--ghost" data-cm="back">Back</button>' : '') +
+                  '<button class="button button--lime" data-cm="next">' + (i === STEPS.length - 1 ? 'Done' : 'Next') + '</button>' +
+                '</span>' +
+              '</div>';
+            const bh = bubble.offsetHeight;
+            let top = r.bottom + 10;
+            if (top + bh > window.innerHeight - 8) top = Math.max(8, r.top - bh - 10);
+            bubble.style.top = top + 'px';
+          }, 320);
+        }
+        bubble.addEventListener('click', (e) => {
+          const b = e.target.closest('[data-cm]'); if (!b) return;
+          const act = b.dataset.cm;
+          if (act === 'skip') done();
+          else if (act === 'back') { if (i > 0) { i--; place(); } }
+          else if (act === 'next') { if (i < STEPS.length - 1) { i++; place(); } else done(); }
+        });
+        place();
+      }
+      window.__fielderStartTour = startTourIfNeeded;
     })();
   </script>
 </body>
