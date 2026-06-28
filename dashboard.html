@@ -474,6 +474,7 @@
         const init = (lead.lead_name || '?').trim().slice(0, 2).toUpperCase() || 'IN';
         const urg = URG[t.urgency] || 'pill--active';
         const tags = [
+          lead.slug ? `<span class="tag">${escd(lead.slug)}</span>` : '',
           t.next_action ? `<span class="tag">${escd(String(t.next_action).replace(/_/g, ' '))}</span>` : '',
           t.service_interest ? `<span class="tag">${escd(t.service_interest)}</span>` : '',
           lead.channel ? `<span class="tag">${escd(lead.channel)}</span>` : '',
@@ -525,25 +526,34 @@
       async function loadLeads() {
         if (!sb) { renderDemo(); return; }
         const cfg = getCfg();
-        try { await autoClaim(cfg); } catch (e) { /* slug owned by someone else — fine */ }
-        let slugs = await ownedSlugs();
-        if (cfg && cfg.slug && !slugs.includes(cfg.slug)) slugs.push(cfg.slug);
-        if (!slugs.length) {
-          banner('No business is linked to this account yet. Open your business page via onboarding (it carries <code>?c=…</code>) to claim it, then your leads land here.');
-          listEl.innerHTML = '<p style="color:var(--muted)">No linked business.</p>';
-          badge(0);
-          return;
+
+        // Super-user? is_admin() (SECURITY DEFINER fn) returns true for built-in admins.
+        let isAdmin = false;
+        try { const { data } = await sb.rpc('is_admin'); isAdmin = !!data; } catch (e) { /* fn not installed yet */ }
+
+        let query = sb.from('leads').select('*').eq('status', 'new').order('created_at', { ascending: false });
+        if (isAdmin) {
+          banner('★ Admin — viewing all leads across every business.');
+        } else {
+          try { await autoClaim(cfg); } catch (e) { /* slug owned by someone else — fine */ }
+          let slugs = await ownedSlugs();
+          if (cfg && cfg.slug && !slugs.includes(cfg.slug)) slugs.push(cfg.slug);
+          if (!slugs.length) {
+            banner('No business is linked to this account yet. Open your business page via onboarding (it carries <code>?c=…</code>) to claim it, then your leads land here.');
+            listEl.innerHTML = '<p style="color:var(--muted)">No linked business.</p>';
+            badge(0);
+            return;
+          }
+          banner('');
+          query = query.in('slug', slugs);  // RLS already scopes; this keeps non-admins tidy
         }
-        const { data, error } = await sb
-          .from('leads').select('*')
-          .in('slug', slugs).eq('status', 'new')
-          .order('created_at', { ascending: false });
+
+        const { data, error } = await query;
         if (error) {
           banner('Could not load leads: ' + escd(error.message) + ' — make sure you ran supabase_schema.sql.');
           listEl.innerHTML = '';
           return;
         }
-        banner('');
         badge((data || []).length);
         listEl.innerHTML = (data || []).length
           ? data.map(cardHTML).join('')

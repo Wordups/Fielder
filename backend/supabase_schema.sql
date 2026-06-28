@@ -123,3 +123,48 @@ create policy "owner updates slug leads"
   ) with check (
     slug in (select slug from public.businesses where owner_id = auth.uid())
   );
+
+-- ── admins (super-users that see/manage EVERY business's data) ────────────────
+-- Built-in test super-users live in this table (by login email). The is_admin()
+-- function is SECURITY DEFINER so it can read this table regardless of RLS.
+create table if not exists public.admins (
+  email text primary key
+);
+alter table public.admins enable row level security;   -- no policies => no client access; only is_admin() (definer) reads it
+
+create or replace function public.is_admin()
+  returns boolean
+  language sql
+  security definer
+  stable
+  set search_path = public
+as $$
+  select exists (
+    select 1 from public.admins where email = (auth.jwt() ->> 'email')
+  );
+$$;
+grant execute on function public.is_admin() to anon, authenticated;
+
+-- Admins read/manage everything (permissive policies are OR'd with the owner ones above).
+drop policy if exists "admin reads all businesses" on public.businesses;
+drop policy if exists "admin reads all leads"      on public.leads;
+drop policy if exists "admin updates all leads"    on public.leads;
+drop policy if exists "admin reads all sites"      on public.sites;
+drop policy if exists "admin updates all sites"    on public.sites;
+
+create policy "admin reads all businesses" on public.businesses for select
+  to authenticated using (public.is_admin());
+create policy "admin reads all leads" on public.leads for select
+  to authenticated using (public.is_admin());
+create policy "admin updates all leads" on public.leads for update
+  to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy "admin reads all sites" on public.sites for select
+  to authenticated using (public.is_admin());
+create policy "admin updates all sites" on public.sites for update
+  to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- Seed the two built-in super-users — REPLACE these with the emails you'll log in with.
+insert into public.admins (email) values
+  ('super1@fielder.test'),
+  ('super2@fielder.test')
+on conflict (email) do nothing;
