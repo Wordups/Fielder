@@ -15,8 +15,8 @@
 //     `backend/` service (the FastAPI app with your ANTHROPIC_API_KEY). Leave it
 //     blank and biz.html falls back to the email-only contact form.
 window.FIELDER = {
-  SUPABASE_URL: "",
-  SUPABASE_ANON_KEY: "",
+  SUPABASE_URL: "https://ehxunvozpvuychkbrrcm.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoeHVudm96cHZ1eWNoa2JycmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MDEyMDgsImV4cCI6MjA5ODE3NzIwOH0.d8WaYk4CWgdStZs_xdtUeeuEUjjAo-vydqVwUNRT52s",
   STORAGE_BUCKET: "portfolios",
   BACKEND_URL: "",          // e.g. "http://localhost:8000" or your deployed extractor URL
 };
