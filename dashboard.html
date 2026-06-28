@@ -186,7 +186,7 @@
     <header class="topbar">
       <a class="brand" href="index.html"><span class="brand__mark" aria-hidden="true"></span>Fielder</a>
       <div class="topbar__right">
-        <span class="demo-flag">● <span>Demo · sample data</span></span>
+        <span class="demo-flag" hidden>● <span>Demo · sample data</span></span>
         <div class="avatar" id="avatar">MC</div>
         <button class="button button--ghost" id="signout">Sign out</button>
       </div>
@@ -195,15 +195,16 @@
     <div class="shell">
       <aside class="sidebar">
         <div class="workspace">
-          <div class="avatar" style="width:36px;height:36px">MC</div>
-          <div><small>Workspace</small><strong id="wsName">Mike Cuts</strong></div>
+          <div class="avatar" style="width:36px;height:36px" id="wsAvatar">F</div>
+          <div><small>Workspace</small><strong id="wsName">Loading…</strong></div>
         </div>
         <nav class="side-nav" id="sideNav" aria-label="Dashboard views">
           <button class="active" data-view="leads"><span class="ic">✉</span>Leads<span class="leadsBadge" id="leadsBadge" hidden>0</span></button>
-          <button data-view="overview"><span class="ic">⌂</span>Overview</button>
-          <button data-view="pipeline"><span class="ic">⇢</span>Pipeline</button>
-          <button data-view="customers"><span class="ic">◎</span>Customers</button>
-          <button data-view="capacity"><span class="ic">◴</span>Capacity</button>
+          <!-- Overview/Pipeline/Customers/Capacity hidden until wired to real data (currently demo mockups). -->
+          <button data-view="overview" hidden><span class="ic">⌂</span>Overview</button>
+          <button data-view="pipeline" hidden><span class="ic">⇢</span>Pipeline</button>
+          <button data-view="customers" hidden><span class="ic">◎</span>Customers</button>
+          <button data-view="capacity" hidden><span class="ic">◴</span>Capacity</button>
         </nav>
         <div class="sidebar__foot">Signed in as<br><span id="whoami">owner@mikecuts.com</span></div>
       </aside>
@@ -468,6 +469,11 @@
       }
       function banner(html) { if (!bannerEl) return; bannerEl.innerHTML = html || ''; bannerEl.hidden = !html; }
       function badge(n) { if (!badgeEl) return; badgeEl.textContent = n; badgeEl.hidden = !n; }
+      function setWorkspace(name) {
+        const w = document.getElementById('wsName'); if (w) w.textContent = name || 'Your business';
+        const a = document.getElementById('wsAvatar');
+        if (a) a.textContent = ((name || 'F').replace(/[^A-Za-z0-9 ]/g, '').split(/\s+/).filter(Boolean).map(s => s[0]).join('').slice(0, 2) || 'F').toUpperCase();
+      }
 
       function cardHTML(lead) {
         const t = lead.triage || {};
@@ -533,17 +539,25 @@
 
         let query = sb.from('leads').select('*').eq('status', 'new').order('created_at', { ascending: false });
         if (isAdmin) {
+          setWorkspace('All businesses');
           banner('★ Admin — viewing all leads across every business.');
         } else {
           try { await autoClaim(cfg); } catch (e) { /* slug owned by someone else — fine */ }
-          let slugs = await ownedSlugs();
+          const { data: bizs } = await sb.from('businesses').select('slug, business_name');
+          let slugs = (bizs || []).map((b) => b.slug);
           if (cfg && cfg.slug && !slugs.includes(cfg.slug)) slugs.push(cfg.slug);
           if (!slugs.length) {
+            setWorkspace(cfg && cfg.businessName ? cfg.businessName : 'Your business');
             banner('No business is linked to this account yet. Open your business page via onboarding (it carries <code>?c=…</code>) to claim it, then your leads land here.');
             listEl.innerHTML = '<p style="color:var(--muted)">No linked business.</p>';
             badge(0);
             return;
           }
+          setWorkspace(
+            (bizs && bizs.length === 1) ? (bizs[0].business_name || bizs[0].slug)
+            : (bizs && bizs.length > 1) ? (bizs.length + ' businesses')
+            : (cfg && cfg.businessName) ? cfg.businessName : 'Your business'
+          );
           banner('');
           query = query.in('slug', slugs);  // RLS already scopes; this keeps non-admins tidy
         }
