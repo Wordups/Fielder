@@ -56,11 +56,13 @@
 <main class="wrap">
   <div class="card">
     <h2>1. Drop in what they already have</h2>
-    <p class="muted">A poster photo, an IG-bio screenshot, or pasted text. Either or both.</p>
-    <label>Poster / Instagram screenshot</label>
-    <input type="file" id="image" accept="image/*">
+    <p class="muted">Flyers, screenshots, work photos, a menu or business-plan PDF, or a quick description — add as much as helps. Fielder reads it all together to understand the business.</p>
+    <label>Flyers · screenshots · work photos (add as many as you like)</label>
+    <input type="file" id="image" accept="image/*" multiple>
+    <label>Menu / brochure / business plan (PDF, optional)</label>
+    <input type="file" id="pdf" accept="application/pdf">
     <div class="divider">and / or</div>
-    <label>Paste their bio or service list</label>
+    <label>Describe the business (optional)</label>
     <textarea id="text" placeholder="Glam by Raye — Atlanta makeup artist. Bridal $250, glam $120, lesson $90. DM @glambyraye"></textarea>
     <div class="actions">
       <button class="btn" id="extract">✨ Extract with AI</button>
@@ -163,6 +165,7 @@ function readForm(){
     tagline: $("f-tagline").value.trim() || null,
     about: $("f-about").value.trim() || null,
     brandColor: $("f-brand").value.trim() || null,
+    theme: selectedTheme,
     contact: {
       email: $("f-email").value.trim() || null,
       instagram: $("f-ig").value.trim() || null,
@@ -174,6 +177,7 @@ function readForm(){
 }
 function fillForm(c){
   c = c || {};
+  selectedTheme = c.theme || null;
   $("f-name").value=c.businessName||""; $("f-slug").value=c.slug||slugify(c.businessName);
   $("f-industry").value=c.industry||""; $("f-flow").value=c.flow||"appointment";
   $("f-tagline").value=c.tagline||""; $("f-about").value=c.about||""; $("f-brand").value=c.brandColor||"";
@@ -194,6 +198,7 @@ function refreshLinks(){
 
 // --- Claude design directions (step 3) ---
 let _dirs = [];
+let selectedTheme = null;   // {bg, ink, accent, font} chosen from a direction
 $("genDesign").addEventListener("click", async ()=>{
   const st=$("designStatus");
   const backend=($("backend").value||backendDefault).replace(/\/$/,"");
@@ -208,8 +213,15 @@ $("genDesign").addEventListener("click", async ()=>{
     _dirs=data.directions||[];
     $("designGrid").innerHTML=_dirs.map((d,i)=>`
       <button type="button" class="dirCard" data-i="${i}" style="text-align:left;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--white);cursor:pointer">
-        <div style="display:flex;align-items:center;gap:8px"><span class="swatch" style="background:${esc(d.brandColor)}"></span><strong>${esc(d.name)}</strong></div>
-        <p class="muted" style="margin-top:6px">${esc(d.vibe)}</p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="display:inline-flex;border-radius:6px;overflow:hidden;border:1px solid var(--line)">
+            <span style="width:16px;height:16px;background:${esc(d.bg)}"></span>
+            <span style="width:16px;height:16px;background:${esc(d.ink)}"></span>
+            <span style="width:16px;height:16px;background:${esc(d.accent)}"></span>
+          </span>
+          <strong>${esc(d.name)}</strong>
+        </div>
+        <p class="muted">${esc(d.vibe)} · <span style="text-transform:capitalize">${esc((d.font||"").replace(/-/g," "))}</span></p>
         <p style="margin-top:8px;font-size:.86rem">“${esc(d.tagline)}”</p>
       </button>`).join("");
     st.className="status ok"; st.textContent="Pick a direction below.";
@@ -220,9 +232,10 @@ $("genDesign").addEventListener("click", async ()=>{
 $("designGrid").addEventListener("click",(e)=>{
   const c=e.target.closest(".dirCard"); if(!c) return;
   const d=_dirs[+c.dataset.i]; if(!d) return;
-  if(d.brandColor) $("f-brand").value=d.brandColor;
-  if(d.tagline)    $("f-tagline").value=d.tagline;
-  if(d.about)      $("f-about").value=d.about;
+  selectedTheme = { bg:d.bg, ink:d.ink, accent:d.accent, font:d.font };
+  if(d.accent)  $("f-brand").value=d.accent;
+  if(d.tagline) $("f-tagline").value=d.tagline;
+  if(d.about)   $("f-about").value=d.about;
   [...$("designGrid").children].forEach(x=>{ x.style.outline=""; });
   c.style.outline="2px solid var(--brand)";
   refreshLinks();
@@ -302,13 +315,14 @@ $("manual").addEventListener("click",()=>fillForm({flow:"appointment"}));
 $("extract").addEventListener("click",async()=>{
   const st=$("status"); const backend=($("backend").value||backendDefault).replace(/\/$/,"");
   localStorage.setItem("fielder_backend",backend);
-  const file=$("image").files[0]; const text=$("text").value.trim();
-  if(!file && !text){ st.className="status err"; st.textContent="Add an image or some text first."; return; }
-  st.className="status"; st.textContent="Reading the material with Claude…";
+  const files=[...$("image").files]; const pdf=$("pdf").files[0]; const text=$("text").value.trim();
+  if(!files.length && !pdf && !text){ st.className="status err"; st.textContent="Add at least one image, a PDF, or a description."; return; }
+  st.className="status"; st.textContent="Reading your materials with Claude…";
   $("extract").disabled=true;
   try{
     const fd=new FormData();
-    if(file) fd.append("image",file);
+    files.forEach(f=>fd.append("images",f));
+    if(pdf) fd.append("pdf",pdf);
     if(text) fd.append("text",text);
     const r=await fetch(backend+"/api/extract",{method:"POST",body:fd});
     const data=await r.json();

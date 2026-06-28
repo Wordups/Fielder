@@ -170,6 +170,29 @@ async function loadConfig(){
   return null;
 }
 
+// Design themes: each "look" picks a font pairing + palette. Applied from cfg.theme.
+const FONTS = {
+  "serif-classic": { display: "'DM Serif Display', Georgia, serif", body: "'Manrope', system-ui, sans-serif", href: "https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;600;700;800&display=swap" },
+  "editorial":     { display: "'Playfair Display', Georgia, serif", body: "'Inter', system-ui, sans-serif", href: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;800&family=Inter:wght@400;500;600;700&display=swap" },
+  "warm-modern":   { display: "'Fraunces', Georgia, serif", body: "'Work Sans', system-ui, sans-serif", href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Work+Sans:wght@400;500;600;700&display=swap" },
+  "bold-sans":     { display: "'Space Grotesk', system-ui, sans-serif", body: "'Inter', system-ui, sans-serif", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" },
+  "clean-minimal": { display: "'Archivo', system-ui, sans-serif", body: "'Inter', system-ui, sans-serif", href: "https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" },
+};
+function applyTheme(cfg){
+  const root = document.documentElement.style;
+  if (cfg.brandColor) root.setProperty("--brand", cfg.brandColor);
+  const t = cfg.theme;
+  if (!t) return;
+  if (t.accent) root.setProperty("--brand", t.accent);
+  if (t.bg) { root.setProperty("--paper", t.bg); root.setProperty("--paper-2", t.bg); }
+  if (t.ink) root.setProperty("--ink", t.ink);
+  const f = FONTS[t.font];
+  if (f) {
+    const link = document.createElement("link"); link.rel = "stylesheet"; link.href = f.href; document.head.appendChild(link);
+    root.setProperty("--display", f.display); root.setProperty("--sans", f.body);
+  }
+}
+
 function render(cfg){
   const app = document.getElementById("app");
   if (!cfg || !cfg.businessName){
@@ -183,7 +206,7 @@ function render(cfg){
       : `<div class="empty wrap">No business config. Open this page from onboarding, or add <code>?slug=name</code>.</div>`;
     return;
   }
-  if (cfg.brandColor) document.documentElement.style.setProperty("--brand", cfg.brandColor);
+  applyTheme(cfg);
   document.title = cfg.businessName + " — Fielder";
 
   const flow = FLOW[cfg.flow] || FLOW.appointment;

@@ -26,6 +26,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 MODEL = "claude-opus-4-8"
+# Loop agents (follow-up, etc.) run often and are simple — default to the same
+# model but allow a cheaper one via env (e.g. LOOP_MODEL=claude-haiku-4-5).
+LOOP_MODEL = os.environ.get("LOOP_MODEL", MODEL)
 
 
 # ── The config contract the frontend renders (one schema, many businesses) ──
@@ -106,7 +109,10 @@ toward next_action. Don't promise specific times or prices you don't have — as
 class DesignDirection(BaseModel):
     name: str            # short label for the look, e.g. "Bold & modern"
     vibe: str            # one line describing the aesthetic
-    brandColor: str      # hex, e.g. "#c2410c"
+    font: Literal["serif-classic", "editorial", "warm-modern", "bold-sans", "clean-minimal"]
+    bg: str              # page background hex (light, e.g. "#f6f1ea")
+    ink: str             # primary text hex (dark, high contrast on bg)
+    accent: str          # brand / accent hex (buttons, highlights)
     tagline: str
     about: str           # 1-2 sentences
 
@@ -124,20 +130,30 @@ Fielder. Given the business profile, propose exactly THREE genuinely distinct vi
 can choose from for their public page.
 
 Rules:
-- Make the three directions clearly different from each other in mood and palette (e.g. one bold/modern, \
-one warm/classic, one clean/minimal) — do NOT return three variations of the same look, and do not default \
-to generic green.
-- brandColor: a hex color that anchors each direction and genuinely fits this industry and vibe. Pick colors \
-a real brand in this trade would use; avoid the same hue across directions.
+- Make the three directions clearly DIFFERENT from each other — different mood, palette, AND font. \
+e.g. one bold/modern, one warm/classic, one clean/minimal. Never three variations of one look; never default to green.
+- font: choose the pairing that fits each direction's mood:
+    serif-classic = elegant, traditional (DM Serif + Manrope)
+    editorial     = upscale, fashion/beauty (Playfair + Inter)
+    warm-modern   = friendly, boutique (Fraunces + Work Sans)
+    bold-sans     = confident, sporty/trades (Space Grotesk + Inter)
+    clean-minimal = crisp, professional (Archivo + Inter)
+- bg / ink / accent: hex colors that fit this trade. bg is a light page background, ink is dark body text \
+with strong contrast on bg, accent is the brand color for buttons. Pick colors a real brand in this trade \
+would use; vary them across the three directions. Ensure ink-on-bg is clearly legible.
 - tagline: short and specific to THIS business (use its name/services), not a generic slogan.
 - about: 1-2 warm sentences in the business's voice.
 - name + vibe: keep them short so the owner can skim and pick."""
 
 
 EXTRACT_INSTRUCTIONS = """You are onboarding a small local service business onto Fielder \
-(a website-plus-dashboard hub for service providers). Extract a structured business profile \
-from the material provided — it may be a photo of a flyer/poster, a screenshot of an \
-Instagram bio/profile, or pasted text.
+(a website-plus-dashboard hub for service providers). You may be given SEVERAL materials at once — \
+flyer/poster photos, Instagram or Google profile screenshots, work/portfolio photos, a PDF (a menu, \
+brochure, or business plan), and/or pasted notes. Read ALL of them together and synthesize ONE coherent \
+profile.
+
+First understand the business: what exactly does this person do, who do they serve, and HOW do they make \
+money (what do they sell and at what price)? Use that understanding to fill the profile and pick the right flow.
 
 Rules:
 - slug: lowercase, url-safe (letters/numbers/hyphens), derived from the business name.
@@ -176,35 +192,61 @@ def health() -> dict:
 
 @app.post("/api/extract")
 async def extract(
-    image: Optional[UploadFile] = File(default=None),
-    text: str = Form(default=""),
+    images: list[UploadFile] = File(default=[]),   # flyers, screenshots, photos — many
+    pdf: Optional[UploadFile] = File(default=None),  # a business plan / menu / brochure
+    text: str = Form(default=""),                    # pasted bio / notes / explanation
+    image: Optional[UploadFile] = File(default=None),  # back-compat: single-image callers (index hero)
 ) -> dict:
-    """Image and/or pasted text in → BusinessConfig JSON out."""
+    """Any mix of images + a PDF + pasted text in → one BusinessConfig out.
+
+    Claude reads ALL of it together to understand what the business actually does
+    and how it makes money, then returns a structured, render-ready profile.
+    """
     text = (text or "").strip()
     blocks: list[dict] = []
 
+    imgs = list(images or [])
     if image is not None:
-        raw = await image.read()
+        imgs.append(image)
+    imgs = imgs[:8]  # cap for cost/latency
+
+    for img in imgs:
+        raw = await img.read()
         if len(raw) > 8 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="Image too large (max 8MB)")
+            raise HTTPException(status_code=413, detail=f"Image '{img.filename}' too large (max 8MB).")
         blocks.append(
             {
                 "type": "image",
                 "source": {
                     "type": "base64",
-                    "media_type": image.content_type or "image/png",
+                    "media_type": img.content_type or "image/png",
                     "data": base64.standard_b64encode(raw).decode("utf-8"),
                 },
             }
         )
 
-    if not image and not text:
-        raise HTTPException(status_code=400, detail="Provide an image or some text to extract from.")
+    if pdf is not None:
+        raw = await pdf.read()
+        if len(raw) > 20 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="PDF too large (max 20MB).")
+        blocks.append(
+            {
+                "type": "document",
+                "source": {
+                    "type": "base64",
+                    "media_type": "application/pdf",
+                    "data": base64.standard_b64encode(raw).decode("utf-8"),
+                },
+            }
+        )
+
+    if not imgs and pdf is None and not text:
+        raise HTTPException(status_code=400, detail="Provide at least one image, a PDF, or some text.")
 
     prompt = EXTRACT_INSTRUCTIONS
     if text:
-        prompt += f"\n\nPasted text / bio:\n{text}"
-    blocks.append({"type": "text", "text": prompt})
+        prompt += f"\n\nPasted text / notes:\n{text}"
+    blocks.append({"type": "text", "text": prompt})  # text last, after any document block
 
     try:
         response = client.messages.parse(
