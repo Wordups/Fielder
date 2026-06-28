@@ -133,6 +133,8 @@
     .leads-banner a { font-weight: 800; }
     .leads-list { display: grid; gap: 14px; max-width: 720px; }
     .lead { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: var(--white); }
+    .lead--new { animation: leadflash 1.4s ease; }
+    @keyframes leadflash { 0% { box-shadow: 0 0 0 3px var(--lime); } 100% { box-shadow: 0 0 0 0 transparent; } }
     .lead__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
     .lead__msg { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: var(--paper); font-size: .85rem; }
     .lead__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
@@ -495,6 +497,26 @@
         if (a) a.textContent = ((name || 'F').replace(/[^A-Za-z0-9 ]/g, '').split(/\s+/).filter(Boolean).map(s => s[0]).join('').slice(0, 2) || 'F').toUpperCase();
       }
 
+      // --- Realtime: new leads appear live, no refresh ---
+      let ownedSet = null, amAdmin = false, realtimeOn = false;
+      function prependLead(L) {
+        if (!L || L.status !== 'new') return;
+        if (!amAdmin && ownedSet && !ownedSet.has(L.slug)) return;  // not one of mine
+        if (listEl.querySelector('[data-id="' + L.id + '"]')) return;  // dedupe
+        if (!listEl.querySelector('.lead')) listEl.innerHTML = cardHTML(L);
+        else listEl.insertAdjacentHTML('afterbegin', cardHTML(L));
+        const el = listEl.querySelector('.lead'); if (el) el.classList.add('lead--new');
+        badge(listEl.querySelectorAll('.lead').length);
+      }
+      function setupRealtime() {
+        if (realtimeOn || !sb) return;
+        realtimeOn = true;
+        sb.channel('fielder-leads')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' },
+              (payload) => prependLead(payload.new))
+          .subscribe();
+      }
+
       function cardHTML(lead) {
         const t = lead.triage || {};
         const init = (lead.lead_name || '?').trim().slice(0, 2).toUpperCase() || 'IN';
@@ -556,6 +578,7 @@
         // Super-user? is_admin() (SECURITY DEFINER fn) returns true for built-in admins.
         let isAdmin = false;
         try { const { data } = await sb.rpc('is_admin'); isAdmin = !!data; } catch (e) { /* fn not installed yet */ }
+        amAdmin = isAdmin; setupRealtime();
 
         let query = sb.from('leads').select('*').eq('status', 'new').order('created_at', { ascending: false });
         if (isAdmin) {
@@ -567,12 +590,14 @@
           let slugs = (bizs || []).map((b) => b.slug);
           if (cfg && cfg.slug && !slugs.includes(cfg.slug)) slugs.push(cfg.slug);
           if (!slugs.length) {
+            ownedSet = new Set();
             setWorkspace(cfg && cfg.businessName ? cfg.businessName : 'Your business');
             banner('No business is linked to this account yet. Open your business page via onboarding (it carries <code>?c=…</code>) to claim it, then your leads land here.');
             listEl.innerHTML = '<p style="color:var(--muted)">No linked business.</p>';
             badge(0);
             return;
           }
+          ownedSet = new Set(slugs);
           setWorkspace(
             (bizs && bizs.length === 1) ? (bizs[0].business_name || bizs[0].slug)
             : (bizs && bizs.length > 1) ? (bizs.length + ' businesses')

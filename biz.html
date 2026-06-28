@@ -45,6 +45,14 @@
   .powered{display:inline-flex;align-items:center;gap:7px;font-weight:800;color:var(--ink)}
   .powered .dot{width:9px;height:9px;border-radius:50%;background:var(--brand)}
   .empty{padding:60px 0;text-align:center;color:var(--muted)}
+  .confirm{max-width:520px;border:1px solid var(--line);border-radius:16px;padding:30px;background:var(--white);text-align:center;animation:pop .25s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .confirm__check{width:56px;height:56px;margin:0 auto 14px;display:grid;place-items:center;border-radius:50%;background:var(--brand);color:#fff;font-size:1.7rem;font-weight:800}
+  .confirm h3{font-family:var(--display);font-weight:400;font-size:1.7rem;margin-bottom:6px}
+  .confirm>p{color:var(--muted);font-size:.95rem;max-width:380px;margin:0 auto}
+  .confirm__echo{margin-top:20px;text-align:left;border-top:1px solid var(--line);padding-top:14px}
+  .confirm__echo span{font-size:.62rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .confirm__echo p{margin-top:6px;font-size:.9rem;line-height:1.5}
   @media (max-width:480px){
     .wrap{width:calc(100% - 24px)}
     .hero{padding:48px 0 32px}
@@ -151,8 +159,16 @@ function wireIntake(cfg){
         status: "new",
       });
       if (error) throw error;
-      form.reset();
-      setStatus(status, `Thanks! ${cfg.businessName} got your request and will follow up.`);
+      const firstName = (lead.lead_name || "").trim().split(/\s+/)[0];
+      const card = document.createElement("div");
+      card.className = "confirm";
+      card.innerHTML =
+        `<div class="confirm__check">✓</div>
+         <h3>Request received</h3>
+         <p>Thanks${firstName ? ", " + esc(firstName) : ""}! ${esc(cfg.businessName)} got your request and will reach out shortly to lock in the details.</p>
+         <div class="confirm__echo"><span>What you sent</span><p>${esc(lead.message)}</p></div>`;
+      form.replaceWith(card);
+      card.scrollIntoView({ block: "center", behavior: "smooth" });
     } catch (err) {
       console.error("[Fielder intake]", err);
       setStatus(status, "Couldn't send just now — please try again or reach out directly.", true);
