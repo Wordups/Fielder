@@ -659,8 +659,11 @@
         const ring = document.createElement('div'); ring.className = 'cm-ring';
         const bubble = document.createElement('div'); bubble.className = 'cm-bubble';
         document.body.append(backdrop, ring, bubble);
-        const cleanup = () => [backdrop, ring, bubble].forEach((e) => e.remove());
-        const done = () => { localStorage.setItem(key, 'done'); cleanup(); };
+        const onKey = (e) => { if (e.key === 'Escape') done(); };
+        const cleanup = () => { document.removeEventListener('keydown', onKey); [backdrop, ring, bubble].forEach((e) => e.remove()); };
+        const done = () => { try { localStorage.setItem(key, 'done'); } catch (e) {} cleanup(); };
+        document.addEventListener('keydown', onKey);
+        backdrop.addEventListener('click', done);   // tap outside the bubble to exit — never trapped
         function place() {
           const step = STEPS[i];
           const t = document.querySelector(step.sel) || (step.alt && document.querySelector(step.alt));
@@ -670,6 +673,7 @@
           }
           t.scrollIntoView({ block: 'center', behavior: 'smooth' });
           setTimeout(() => {
+           try {
             const r = t.getBoundingClientRect();
             ring.style.left = (r.left - 4) + 'px'; ring.style.top = (r.top - 4) + 'px';
             ring.style.width = (r.width + 8) + 'px'; ring.style.height = (r.height + 8) + 'px';
@@ -690,6 +694,7 @@
             let top = r.bottom + 10;
             if (top + bh > window.innerHeight - 8) top = Math.max(8, r.top - bh - 10);
             bubble.style.top = top + 'px';
+           } catch (e) { cleanup(); }   // never leave the user stuck behind the overlay
           }, 320);
         }
         bubble.addEventListener('click', (e) => {
