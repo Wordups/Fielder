@@ -149,8 +149,11 @@
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const backendDefault = "http://localhost:8000";
-$("backend").value = localStorage.getItem("fielder_backend") || backendDefault;
+// Prefer the deployed backend from fielder-config.js (BACKEND_URL); fall back to a
+// saved value, then localhost. This is why "Extract" failed live — it was hitting localhost.
+const cfgBackend = ((window.FIELDER || {}).BACKEND_URL || "").replace(/\/+$/, "");
+const backendDefault = cfgBackend || "http://localhost:8000";
+$("backend").value = cfgBackend || localStorage.getItem("fielder_backend") || backendDefault;
 
 function b64url(obj){
   const s = btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
