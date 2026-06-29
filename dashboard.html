@@ -225,8 +225,8 @@
           <!-- Overview/Pipeline/Customers/Capacity hidden until wired to real data (currently demo mockups). -->
           <button data-view="overview" hidden><span class="ic">⌂</span>Overview</button>
           <button data-view="pipeline"><span class="ic">⇢</span>Pipeline</button>
-          <button data-view="customers" hidden><span class="ic">◎</span>Customers</button>
-          <button data-view="capacity" hidden><span class="ic">◴</span>Capacity</button>
+          <button data-view="customers"><span class="ic">◎</span>Customers</button>
+          <button data-view="capacity"><span class="ic">◴</span>Capacity</button>
         </nav>
         <div class="sidebar__foot">Signed in as<br><span id="whoami">owner@mikecuts.com</span></div>
       </aside>
@@ -283,48 +283,13 @@
         <!-- CUSTOMERS -->
         <section class="view" id="view-customers">
           <div class="page-head"><div><small>Customer health</small><h2>Customers</h2></div></div>
-          <div class="table">
-            <div class="trow trow--head"><span>Customer</span><span>Health</span><span class="th-service">Service</span><span>Visits</span><span>Value</span></div>
-            <div class="trow"><strong>Kai Lewis</strong><span><span class="pill pill--great">Great</span></span><span class="col-service">Fade</span><b>9</b><span>$315</span></div>
-            <div class="trow"><strong>Maya King</strong><span><span class="pill pill--great">Great</span></span><span class="col-service">Cut + color</span><b>6</b><span>$540</span></div>
-            <div class="trow"><strong>Jordan Mills</strong><span><span class="pill pill--active">Active</span></span><span class="col-service">Fade + line-up</span><b>3</b><span>$105</span></div>
-            <div class="trow"><strong>Devin Ross</strong><span><span class="pill pill--risk">At risk</span></span><span class="col-service">Lineup</span><b>2</b><span>$70</span></div>
-            <div class="trow"><strong>Andre Jones</strong><span><span class="pill pill--ghost">Ghosted</span></span><span class="col-service">Beard trim</span><b>0</b><span>$0</span></div>
-            <div class="trow"><strong>Sam Carter</strong><span><span class="pill pill--lost">Lost</span></span><span class="col-service">Fade</span><b>1</b><span>$35</span></div>
-          </div>
+          <div class="table" id="customersList"><p style="padding:14px;color:var(--muted)">Loading…</p></div>
         </section>
 
         <!-- CAPACITY -->
         <section class="view" id="view-capacity">
           <div class="page-head"><div><small>Schedule</small><h2>Capacity</h2></div></div>
-          <div class="panels">
-            <div class="panel">
-              <div class="panel__head"><strong>This week</strong><span style="color:var(--muted);font-size:.72rem">Mon–Sat</span></div>
-              <div class="capacity">
-                <div class="ring" style="--deg:300deg"><strong>83%</strong></div>
-                <div class="capacity__copy">
-                  <span>Appointments booked</span>
-                  <strong>35 of 42</strong>
-                  <div class="bar"><i style="width:83%"></i></div>
-                  <span style="display:block;margin-top:8px">7 open slots remaining</span>
-                </div>
-              </div>
-            </div>
-            <div class="panel">
-              <div class="panel__head"><strong>Waitlist</strong><a>Notify →</a></div>
-              <div class="hrow"><div class="person"><i>TB</i><div><strong>Tyler B.</strong><span>Wants Sat afternoon</span></div></div><span class="pill pill--active">Waiting</span></div>
-              <div class="hrow"><div class="person"><i>RP</i><div><strong>Rosa P.</strong><span>Flexible this week</span></div></div><span class="pill pill--active">Waiting</span></div>
-            </div>
-          </div>
-          <div class="panel" style="margin-top:14px">
-            <div class="panel__head"><strong>Weekly utilization</strong></div>
-            <div class="hrow"><span style="font-size:.8rem">Mon</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:90%"></i></div><span style="font-size:.74rem;color:var(--muted)">90%</span></div>
-            <div class="hrow"><span style="font-size:.8rem">Tue</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:70%"></i></div><span style="font-size:.74rem;color:var(--muted)">70%</span></div>
-            <div class="hrow"><span style="font-size:.8rem">Wed</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:85%"></i></div><span style="font-size:.74rem;color:var(--muted)">85%</span></div>
-            <div class="hrow"><span style="font-size:.8rem">Thu</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:60%"></i></div><span style="font-size:.74rem;color:var(--muted)">60%</span></div>
-            <div class="hrow"><span style="font-size:.8rem">Fri</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:100%"></i></div><span style="font-size:.74rem;color:var(--muted)">Full</span></div>
-            <div class="hrow"><span style="font-size:.8rem">Sat</span><div class="bar" style="flex:1;margin:0 12px"><i style="width:95%"></i></div><span style="font-size:.74rem;color:var(--muted)">95%</span></div>
-          </div>
+          <div id="capacityBox"><p style="color:var(--muted)">Loading…</p></div>
         </section>
 
       </main>
@@ -400,6 +365,8 @@
       document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${view}`));
       window.scrollTo({ top: 0 });
       if (view === 'pipeline') loadPipeline();
+      if (view === 'customers') loadCustomers();
+      if (view === 'capacity') loadCapacity();
     }
     navButtons.forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
     document.querySelectorAll('[data-goto]').forEach((a) => a.addEventListener('click', () => setView(a.dataset.goto)));
@@ -448,6 +415,71 @@
       const { error } = await sb.from('leads').update({ stage: PIPE_STAGES[next].key }).eq('id', id);
       if (!error) loadPipeline(); else btn.disabled = false;
     });
+
+    // --- Customers + health (real, derived from stage + recency) ---
+    const customersList = document.getElementById('customersList');
+    function healthOf(l) {
+      if (l.status === 'dismissed') return { label: 'Lost', cls: 'pill--lost' };
+      const st = l.stage || 'contacted';
+      if (st === 'returning') return { label: 'Great', cls: 'pill--great' };
+      if (st === 'completed' || st === 'booked' || st === 'confirmed') return { label: 'Active', cls: 'pill--active' };
+      const days = (Date.now() - new Date(l.created_at).getTime()) / 86400000;
+      if (days <= 3) return { label: 'Active', cls: 'pill--active' };
+      if (days <= 10) return { label: 'At risk', cls: 'pill--risk' };
+      return { label: 'Ghosted', cls: 'pill--ghost' };
+    }
+    async function loadCustomers() {
+      if (!customersList) return;
+      if (!sb) { customersList.innerHTML = '<p style="padding:14px;color:var(--muted)">Connect Supabase.</p>'; return; }
+      customersList.innerHTML = '<p style="padding:14px;color:var(--muted)">Loading…</p>';
+      const { data, error } = await sb.from('leads').select('*').in('status', ['approved', 'dismissed']).order('created_at', { ascending: false });
+      if (error) { customersList.innerHTML = '<p style="padding:14px;color:var(--muted)">' + pesc(error.message) + '</p>'; return; }
+      const rows = (data || []).map(l => {
+        const h = healthOf(l), t = l.triage || {};
+        const svc = t.service_interest || (l.message || '').slice(0, 30);
+        return `<div class="trow"><strong>${pesc(l.lead_name || 'Unknown')}</strong><span><span class="pill ${h.cls}">${h.label}</span></span><span class="col-service">${pesc(svc)}</span><b>${pesc(l.stage || '—')}</b><span>${l.value != null ? '$' + pesc(l.value) : '—'}</span></div>`;
+      }).join('');
+      customersList.innerHTML = '<div class="trow trow--head"><span>Customer</span><span>Health</span><span class="th-service">Service</span><span>Stage</span><span>Value</span></div>' +
+        (rows || '<div class="trow"><span style="color:var(--muted)">No customers yet — approved leads appear here.</span></div>');
+    }
+
+    // --- Capacity (real booked count vs a weekly target) ---
+    const capacityBox = document.getElementById('capacityBox');
+    async function loadCapacity() {
+      if (!capacityBox) return;
+      if (!sb) { capacityBox.innerHTML = '<p style="color:var(--muted)">Connect Supabase.</p>'; return; }
+      capacityBox.innerHTML = '<p style="color:var(--muted)">Loading…</p>';
+      const { data, error } = await sb.from('leads').select('stage,status');
+      if (error) { capacityBox.innerHTML = '<p style="color:var(--muted)">' + pesc(error.message) + '</p>'; return; }
+      const booked = (data || []).filter(l => l.status === 'approved' && (l.stage === 'confirmed' || l.stage === 'booked')).length;
+      const cap = parseInt(localStorage.getItem('fielder_capacity') || '20', 10) || 20;
+      const pct = Math.min(100, Math.round((booked / cap) * 100));
+      capacityBox.innerHTML = `
+        <div class="panels">
+          <div class="panel">
+            <div class="panel__head"><strong>This period</strong></div>
+            <div class="capacity">
+              <div class="ring" style="--deg:${Math.round(pct * 3.6)}deg"><strong>${pct}%</strong></div>
+              <div class="capacity__copy">
+                <span>Booked &amp; confirmed</span>
+                <strong>${booked} of ${cap}</strong>
+                <div class="bar"><i style="width:${pct}%"></i></div>
+                <span style="display:block;margin-top:8px">${Math.max(0, cap - booked)} slots remaining</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel__head"><strong>Weekly capacity</strong></div>
+            <p style="color:var(--muted);font-size:.8rem;margin-bottom:10px">How many jobs you can take per week.</p>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="capInput" type="number" min="1" value="${cap}" style="width:90px;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit">
+              <button class="button button--lime" id="capSave">Save</button>
+            </div>
+          </div>
+        </div>`;
+      const save = document.getElementById('capSave');
+      if (save) save.addEventListener('click', () => { const v = parseInt(document.getElementById('capInput').value, 10); if (v > 0) { localStorage.setItem('fielder_capacity', String(v)); loadCapacity(); } });
+    }
 
     // --- Leads approval queue (the intake loop's review stage) ---
     (function () {
