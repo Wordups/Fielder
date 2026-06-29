@@ -90,6 +90,8 @@ create table if not exists public.leads (
   channel      text,                           -- website / instagram / google / facebook / text / referral
   message      text not null,                  -- the raw submission
   triage       jsonb,                          -- the full IntakeResult from /api/intake
+  stage        text not null default 'new',    -- pipeline stage once approved: contacted/confirmed/booked/completed/returning
+  value        numeric,                        -- optional job/customer value
   status       text not null default 'new'
                  check (status in ('new', 'approved', 'dismissed')),
   created_at   timestamptz not null default now()

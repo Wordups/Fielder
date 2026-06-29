@@ -224,7 +224,7 @@
           <button class="active" data-view="leads"><span class="ic">✉</span>Leads<span class="leadsBadge" id="leadsBadge" hidden>0</span></button>
           <!-- Overview/Pipeline/Customers/Capacity hidden until wired to real data (currently demo mockups). -->
           <button data-view="overview" hidden><span class="ic">⌂</span>Overview</button>
-          <button data-view="pipeline" hidden><span class="ic">⇢</span>Pipeline</button>
+          <button data-view="pipeline"><span class="ic">⇢</span>Pipeline</button>
           <button data-view="customers" hidden><span class="ic">◎</span>Customers</button>
           <button data-view="capacity" hidden><span class="ic">◴</span>Capacity</button>
         </nav>
@@ -276,13 +276,7 @@
 
         <!-- PIPELINE -->
         <section class="view" id="view-pipeline">
-          <div class="page-head"><div><small>Lead pipeline</small><h2 id="flowTitle">Appointment flow</h2></div></div>
-          <div class="flow-tabs" id="flowTabs">
-            <button class="flow-tab active" data-flow="appointment">Appointment <b>·</b></button>
-            <button class="flow-tab" data-flow="quote">Quote</button>
-            <button class="flow-tab" data-flow="capacity">Capacity</button>
-            <button class="flow-tab" data-flow="membership">Membership</button>
-          </div>
+          <div class="page-head"><div><small>Lead pipeline</small><h2>Pipeline</h2></div></div>
           <div class="kanban" id="kanban"></div>
         </section>
 
@@ -405,75 +399,55 @@
       navButtons.forEach((b) => b.classList.toggle('active', b.dataset.view === view));
       document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${view}`));
       window.scrollTo({ top: 0 });
+      if (view === 'pipeline') loadPipeline();
     }
     navButtons.forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
     document.querySelectorAll('[data-goto]').forEach((a) => a.addEventListener('click', () => setView(a.dataset.goto)));
 
-    // --- Pipeline flows (the four reusable Fielder flows) ---
-    const flows = {
-      appointment: { title: 'Appointment flow', stages: [
-        { name: 'Lead', cards: [{ n: 'Tasha B.', s: 'Silk press' }, { n: 'Omar J.', s: 'Fade' }, { n: 'Priya S.', s: 'Cut' }] },
-        { name: 'Book', cards: [{ n: 'Maya K.', s: 'Cut + color' }, { n: 'Leon M.', s: 'Fade' }] },
-        { name: 'Confirmed', cards: [{ n: 'Jay C.', s: 'Lineup · Sat 2:00' }] },
-        { name: 'Completed', cards: [{ n: 'Kai L.', s: 'Fade' }, { n: 'Dre P.', s: 'Beard' }] },
-        { name: 'Returning', cards: [{ n: 'Dev K.', s: 'Monthly regular' }] },
-      ]},
-      quote: { title: 'Quote flow', stages: [
-        { name: 'Lead', cards: [{ n: 'Hill Residence', s: 'Driveway wash' }, { n: 'Cardenas', s: 'Patio + deck' }] },
-        { name: 'Review', cards: [{ n: 'Okafor', s: 'House siding' }] },
-        { name: 'Quote sent', cards: [{ n: 'Nia W.', s: '$280 · 9 days' }, { n: 'Tran', s: '$540' }] },
-        { name: 'Accepted', cards: [{ n: 'Bell', s: '$420' }] },
-        { name: 'Scheduled', cards: [{ n: 'Romero', s: 'Thu 9:00' }] },
-        { name: 'Completed', cards: [{ n: 'Aziz', s: '$360 · paid' }] },
-      ]},
-      capacity: { title: 'Capacity flow', stages: [
-        { name: 'Lead', cards: [{ n: 'A. Flores', s: '5 meals/wk' }, { n: 'J. Park', s: '10 meals/wk' }] },
-        { name: 'Reserve slot', cards: [{ n: 'M. Reed', s: 'Wk 24' }] },
-        { name: 'Scheduled', cards: [{ n: 'C. Gray', s: 'Tue delivery' }, { n: 'L. Soto', s: 'Wed delivery' }] },
-        { name: 'Completed', cards: [{ n: 'D. Nash', s: 'Wk 23 · 8 meals' }] },
-        { name: 'Recurring', cards: [{ n: 'P. Adler', s: 'Weekly · 6 mo' }] },
-      ]},
-      membership: { title: 'Membership flow', stages: [
-        { name: 'Lead', cards: [{ n: 'Glen Oaks', s: 'Monthly lawn' }, { n: 'B. Cho', s: 'Coaching' }] },
-        { name: 'Subscribed', cards: [{ n: 'Whitfield', s: '$120/mo' }] },
-        { name: 'Active', cards: [{ n: 'R. Diaz', s: '4 mo' }, { n: 'T. Banks', s: '2 mo' }] },
-        { name: 'Renewal', cards: [{ n: 'S. Pope', s: 'Due in 6 days' }] },
-        { name: 'Retained', cards: [{ n: 'V. Ortiz', s: '14 mo · LTV $1.6k' }] },
-      ]},
-    };
-
+    // --- Pipeline (real, from Supabase) — approved leads move through stages ---
+    const PIPE_STAGES = [
+      { key: 'contacted', label: 'Contacted' },
+      { key: 'confirmed', label: 'Confirmed' },
+      { key: 'booked',    label: 'Booked' },
+      { key: 'completed', label: 'Completed' },
+      { key: 'returning', label: 'Returning' },
+    ];
     const kanban = document.getElementById('kanban');
-    function renderFlow(key) {
-      const flow = flows[key];
-      document.getElementById('flowTitle').textContent = flow.title;
-      kanban.innerHTML = flow.stages.map((st) => `
+    const pesc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+    async function loadPipeline() {
+      if (!kanban) return;
+      if (!sb) { kanban.innerHTML = '<p style="color:var(--muted)">Connect Supabase to use the pipeline.</p>'; return; }
+      kanban.innerHTML = '<p style="color:var(--muted)">Loading…</p>';
+      const { data, error } = await sb.from('leads').select('*').eq('status', 'approved').order('created_at', { ascending: false });
+      if (error) { kanban.innerHTML = '<p style="color:var(--muted)">Could not load pipeline: ' + pesc(error.message) + '</p>'; return; }
+      const by = {}; PIPE_STAGES.forEach(s => by[s.key] = []);
+      (data || []).forEach(l => { const k = (l.stage && by[l.stage]) ? l.stage : 'contacted'; by[k].push(l); });
+      kanban.innerHTML = PIPE_STAGES.map((s, i) => `
         <div class="col">
-          <header><span>${st.name}</span><b>${st.cards.length}</b></header>
-          ${st.cards.map((c) => `<div class="kard"><strong>${c.n}</strong><span>${c.s}</span></div>`).join('')}
+          <header><span>${s.label}</span><b>${by[s.key].length}</b></header>
+          ${by[s.key].map(l => {
+            const t = l.triage || {}; const svc = t.service_interest || (l.message || '').slice(0, 42);
+            return `<div class="kard" data-id="${pesc(l.id)}" data-stage="${s.key}">
+              <strong>${pesc(l.lead_name || 'Unknown')}</strong>
+              <span>${pesc(svc)}</span>
+              <div style="display:flex;gap:6px;margin-top:8px">
+                ${i > 0 ? '<button class="kmove" data-dir="-1" title="Back" style="border:1px solid var(--line);background:var(--white);border-radius:6px;padding:2px 9px;cursor:pointer">◀</button>' : ''}
+                ${i < PIPE_STAGES.length - 1 ? '<button class="kmove" data-dir="1" title="Advance" style="border:1px solid var(--line);background:var(--white);border-radius:6px;padding:2px 9px;cursor:pointer;margin-left:auto">▶</button>' : ''}
+              </div>
+            </div>`;
+          }).join('')}
         </div>`).join('');
     }
-    document.getElementById('flowTabs').addEventListener('click', (e) => {
-      const tab = e.target.closest('[data-flow]');
-      if (!tab) return;
-      document.querySelectorAll('#flowTabs .flow-tab').forEach((t) => t.classList.toggle('active', t === tab));
-      renderFlow(tab.dataset.flow);
+    if (kanban) kanban.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.kmove'); if (!btn) return;
+      const card = btn.closest('.kard'); const id = card.dataset.id;
+      const idx = PIPE_STAGES.findIndex(s => s.key === card.dataset.stage);
+      const next = idx + parseInt(btn.dataset.dir, 10);
+      if (next < 0 || next >= PIPE_STAGES.length) return;
+      btn.disabled = true;
+      const { error } = await sb.from('leads').update({ stage: PIPE_STAGES[next].key }).eq('id', id);
+      if (!error) loadPipeline(); else btn.disabled = false;
     });
-    // Hydrate from an onboarding config (?c=<base64url JSON>) when present,
-    // else fall back to the barber demo.
-    (function () {
-      const p = new URLSearchParams(location.search);
-      let cfg = null;
-      if (p.get('c')) {
-        try { cfg = JSON.parse(decodeURIComponent(escape(atob(p.get('c').replace(/-/g, '+').replace(/_/g, '/'))))); } catch (e) { cfg = null; }
-      }
-      const flow = (cfg && ['appointment', 'quote', 'capacity', 'membership'].includes(cfg.flow)) ? cfg.flow : 'appointment';
-      if (cfg && cfg.businessName) {
-        document.title = cfg.businessName + ' — Fielder dashboard';
-        const ws = document.getElementById('wsName'); if (ws) ws.textContent = cfg.businessName;
-        document.querySelectorAll('#flowTabs .flow-tab').forEach((t) => t.classList.toggle('active', t.dataset.flow === flow));
-      }
-      renderFlow(flow);
-    })();
 
     // --- Leads approval queue (the intake loop's review stage) ---
     (function () {
@@ -631,7 +605,7 @@
           try { await navigator.clipboard.writeText(draft); } catch {}
           btn.textContent = 'Copied ✓';
           if (sb && !String(id).startsWith('demo')) {
-            const { error } = await sb.from('leads').update({ status: 'approved' }).eq('id', id);
+            const { error } = await sb.from('leads').update({ status: 'approved', stage: 'contacted' }).eq('id', id);
             if (error) { btn.textContent = 'Error'; return; }
           }
           setTimeout(() => { card.remove(); badge(listEl.querySelectorAll('.lead').length); }, 450);
