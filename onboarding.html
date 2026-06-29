@@ -118,6 +118,7 @@
     <textarea id="f-portfolio" placeholder="https://…/work1.jpg&#10;https://…/work2.jpg"></textarea>
     <div class="actions">
       <a class="btn" id="preview" target="_blank" rel="noopener">Preview business page ↗</a>
+      <a class="btn btn--ghost" id="preview-trades" target="_blank" rel="noopener">Preview — trades look ↗</a>
       <a class="btn btn--ghost" id="dash" target="_blank" rel="noopener">Preview dashboard ↗</a>
       <button class="btn btn--ghost" id="download">Download config</button>
     </div>
@@ -198,6 +199,7 @@ function fillForm(c){
 function refreshLinks(){
   const cfg=readForm();
   $("preview").href="biz.html?c="+b64url(cfg);
+  const pt=$("preview-trades"); if(pt) pt.href="biz-trades.html?c="+b64url(cfg);
   $("dash").href="dashboard.html?c="+b64url(cfg);
   $("sw").style.background=cfg.brandColor||"#3da35d";
   const ls=$("liveSlug"); if(ls) ls.textContent="biz.html?slug="+(cfg.slug||"…");
